@@ -1,0 +1,2 @@
+# wowfy.js
+Wowfy is a versatile JavaScript animation library that empowers users to effortlessly apply a wide range of mesmerizing and eye-catching effects, enhancing the visual appeal of their web projects.

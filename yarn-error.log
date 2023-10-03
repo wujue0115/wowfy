@@ -1,0 +1,63 @@
+Arguments: 
+  /Users/wujue/.nvm/versions/node/v18.17.1/bin/node /Users/wujue/.nvm/versions/node/v18.17.1/bin/yarn add prettier prettier-eslint --save-dev
+
+PATH: 
+  /Users/wujue/.nvm/versions/node/v18.17.1/bin:/opt/homebrew/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/wujue/.nvm/versions/node/v18.17.1/bin:/opt/homebrew/bin
+
+Yarn version: 
+  1.22.19
+
+Node version: 
+  18.17.1
+
+Platform: 
+  darwin arm64
+
+Trace: 
+  Error: ENOENT: no such file or directory, copyfile '/Users/wujue/Library/Caches/Yarn/v6/npm-ansi-styles-4.3.0-edd803628ae71c04c85ae7a0906edad34b648937-integrity/node_modules/ansi-styles/index.d.ts' -> '/Users/wujue/main/development/wowfy/wowfy/node_modules/eslint/node_modules/ansi-styles/index.d.ts'
+
+npm manifest: 
+  {
+    "name": "wowfy",
+    "description": "A awesome and easy-to-use JavaScript effects package.",
+    "version": "1.0.0",
+    "author": {
+      "name": "Wujue",
+      "email": "wujue0115@gmail.com",
+      "githubLink": "https://github.com/Wujue0115"
+    },
+    "license": "MIT",
+    "homepage": "not yet QQ",
+    "main": "./dist/wowfy.esm.js",
+    "type": "module",
+    "types": "./dist/wowfy.d.ts",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "build": "rollup -c rollup.config.js",
+      "build-dts": "tsc -b tsconfig.build.json && rollup -c rollup.dts.config.js",
+      "lint": "eslint --ext \".ts,.js,.vue\" --ignore-path .eslintignore .",
+      "lint-fix": "eslint --fix --ext \".ts,.js,.vue\" --ignore-path .eslintignore .",
+      "clean": "rimraf dist"
+    },
+    "devDependencies": {
+      "@rollup/plugin-node-resolve": "^15.2.1",
+      "@rollup/plugin-terser": "^0.4.3",
+      "@rollup/plugin-typescript": "^11.1.3",
+      "@typescript-eslint/eslint-plugin": "^6.7.2",
+      "@typescript-eslint/parser": "^6.7.2",
+      "eslint": "^8.50.0",
+      "rimraf": "^5.0.1",
+      "rollup": "^3.29.2",
+      "rollup-plugin-dts": "^6.0.2",
+      "typescript": "^5.2.2"
+    },
+    "dependencies": {
+      "tslib": "^2.6.2"
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
