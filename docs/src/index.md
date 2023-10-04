@@ -5,7 +5,7 @@ layout: home
 hero:
   name: "Wowfy"
   text: "An awesome and easy-to-use JavaScript animation library."
-  tagline: My great project tagline
+  tagline: Wowfy is a library for effortlessly creating captivating web animations.
   actions:
     - theme: brand
       text: Markdown Examples
@@ -22,4 +22,3 @@ features:
   - title: Feature C
     details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
 ---
-
