@@ -1,8 +1,12 @@
-node_modules
-dist
-types
-example
+node_modules/
+dist/
+types/
+example/
 
 # Misc
 .vscode
 .DS_Store
+
+# vitepress build output
+docs/.vitepress/dist/
+docs/.vitepress/cache/
