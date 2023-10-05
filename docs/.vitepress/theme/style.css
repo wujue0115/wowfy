@@ -49,9 +49,9 @@
   --vp-c-default-3: var(--vp-c-gray-3);
   --vp-c-default-soft: var(--vp-c-gray-soft);
 
-  --vp-c-brand-1: #ff98cf; /* custom */
-  --vp-c-brand-2: #ffb3db; /* custom */
-  --vp-c-brand-3: #ffd2ea; /* custom */
+  --vp-c-brand-1: #ff63b6; /* custom */
+  --vp-c-brand-2: #ff98cf; /* custom */
+  --vp-c-brand-3: #ffb3db; /* custom */
   --vp-c-brand-soft: #ff98cf33; /* custom */
 
   --vp-c-tip-1: var(--vp-c-brand-1);
@@ -68,6 +68,13 @@
   --vp-c-danger-2: var(--vp-c-red-2);
   --vp-c-danger-3: var(--vp-c-red-3);
   --vp-c-danger-soft: var(--vp-c-red-soft);
+}
+
+.dark {
+  --vp-c-brand-1: #ff98cf; /* custom */
+  --vp-c-brand-2: #ffb3db; /* custom */
+  --vp-c-brand-3: #ffd2ea; /* custom */
+  --vp-c-brand-soft: #ff98cf33; /* custom */
 }
 
 /**
@@ -123,10 +130,13 @@
  * -------------------------------------------------------------------------- */
 
 :root {
-  --vp-custom-block-tip-border: transparent;
-  --vp-custom-block-tip-text: var(--vp-c-text-1);
+  --vp-custom-block-tip-border: var(--vp-c-brand-1); /* custom */
+  --vp-custom-block-tip-text: var(--vp-c-brand-1); /* custom */
   --vp-custom-block-tip-bg: var(--vp-c-brand-soft);
   --vp-custom-block-tip-code-bg: var(--vp-c-brand-soft);
+
+  --vp-custom-block-warning-border: var(--vp-c-warning-1); /* custom */
+  --vp-custom-block-warning-text: var(--vp-c-warning-1); /* custom */
 }
 
 /**
@@ -135,4 +145,12 @@
 
 .DocSearch {
   --docsearch-primary-color: var(--vp-c-brand-1) !important;
+}
+
+/**
+ * Component: Code Block
+ * -------------------------------------------------------------------------- */
+
+:root {
+  --vp-code-line-highlight-color: var(--vp-c-brand-soft); /* custom */
 }
