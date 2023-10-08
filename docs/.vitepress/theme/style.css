@@ -137,6 +137,9 @@
 
   --vp-custom-block-warning-border: var(--vp-c-warning-1); /* custom */
   --vp-custom-block-warning-text: var(--vp-c-warning-1); /* custom */
+
+  --vp-custom-block-info-border: var(--vp-c-info-1); /* custom */
+  --vp-custom-block-info-text: var(--vp-c-info-1); /* custom */
 }
 
 /**
