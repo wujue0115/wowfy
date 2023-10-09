@@ -21,6 +21,12 @@ export default defineConfig({
         ]
       },
       {
+        text: 'Effects',
+        items: [
+          { text: 'Ripple', link: '/effects/ripple' },
+        ]
+      },
+      {
         text: 'Examples',
         items: [
           { text: 'Markdown Examples', link: '/markdown-examples' },
