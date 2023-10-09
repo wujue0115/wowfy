@@ -111,12 +111,11 @@ export class Ripple {
   // [Methods] Private methods
   // There is a simpler way to validate the option.
   private validateOption() {
-    if (
-      !isValidTimeFormat(this._option.duration) ||
-      !isValidTimeFormat(this._option.delay) ||
-      !isValidTimeFormat(this._option.repeatInterval)
-    ) {
-      throw new Error(`"${this._option.duration}" is an invalid time format.`);
+    const times = ["duration", "delay", "repeatInterval"];
+    for (const time of times) {
+      if (!isValidTimeFormat(this._option[time])) {
+        throw new Error(`"${this._option[time]}" is an invalid time format.`);
+      }
     }
   }
 
