@@ -20,7 +20,7 @@ const defaultRippleOptions: TRippleOption = {
   repeatInterval: "0ms",
   maxCount: 10,
   outline: "",
-  boxShadow: "",
+  boxShadow: ""
 };
 
 export class Ripple {
@@ -120,12 +120,12 @@ export class Ripple {
   }
 
   private createRippleWrapper() {
-      return createElement("div", {
+    return createElement("div", {
       position: "absolute",
       inset: "0",
       borderRadius: "inherit",
       pointerEvents: "none",
-      contain: "strict",
+      contain: "strict"
     });
   }
 
@@ -143,7 +143,7 @@ export class Ripple {
       borderRadius: "50%",
       background: this._option.background,
       outline: this._option.outline,
-      boxShadow: this._option.boxShadow,
+      boxShadow: this._option.boxShadow
     });
   }
 
@@ -289,7 +289,10 @@ export class Ripple {
 
   private addRippleEffect(event?: MouseEvent) {
     // Remove the first ripple when the number of ripples exceeds the threshold.
-    const maxCount = Math.min(Math.max(1, this._option.maxCount), Ripple.rippleCountThreshold)
+    const maxCount = Math.min(
+      Math.max(1, this._option.maxCount),
+      Ripple.rippleCountThreshold
+    );
     while (this._rippleInstances.length >= maxCount) {
       this._rippleInstances.shift().remove();
     }

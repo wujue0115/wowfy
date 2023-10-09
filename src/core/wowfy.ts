@@ -2,14 +2,21 @@ import type { TEffect, TEffectOptions } from "./types";
 import { Ripple } from "../effects/index";
 
 const EffectInstances = {
-  ripple: Ripple,
-}
+  ripple: Ripple
+};
 
 export class Wowfy {
   private _effectInstance: Ripple | null = null;
 
-  constructor(private _element: HTMLElement, private _effect: TEffect, option: TEffectOptions) {
-    this._effectInstance = new EffectInstances[this._effect](this._element, option);
+  constructor(
+    private _element: HTMLElement,
+    private _effect: TEffect,
+    option: TEffectOptions
+  ) {
+    this._effectInstance = new EffectInstances[this._effect](
+      this._element,
+      option
+    );
     this._effectInstance.setEffect();
   }
 

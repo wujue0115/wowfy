@@ -1,5 +1,3 @@
-import { Wowfy } from './wowfy';
+import { Wowfy } from "./wowfy";
 
-export {
-  Wowfy,
-}
+export { Wowfy };

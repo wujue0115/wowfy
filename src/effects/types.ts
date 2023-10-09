@@ -34,17 +34,17 @@ export type TRipplePosition =
   | "rb";
 
 export type TRippleOption = {
-  event: string,
-  background: string,
-  duration: string,
-  timingFunction: string,
-  mode: TRippleMode,
-  position: TRipplePosition,
-  delay: string,
-  sizeRatio: number,
-  repeatCount: number,
-  repeatInterval: string,
-  maxCount: number,
-  outline: string,
-  boxShadow: string,
+  event: string;
+  background: string;
+  duration: string;
+  timingFunction: string;
+  mode: TRippleMode;
+  position: TRipplePosition;
+  delay: string;
+  sizeRatio: number;
+  repeatCount: number;
+  repeatInterval: string;
+  maxCount: number;
+  outline: string;
+  boxShadow: string;
 };
