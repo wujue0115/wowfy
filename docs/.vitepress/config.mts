@@ -8,7 +8,7 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Guide', link: '/guide/introduction' },
-      { text: 'Effects', link: '/guide/effects/ripple' }
+      { text: 'Effects', link: '/guide/effects/ripple' },
     ],
 
     sidebar: [
@@ -29,8 +29,14 @@ export default defineConfig({
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/vuejs/vitepress' }
-    ]
+      { icon: 'github', link: 'https://github.com/wujue0115/wowfy' }
+    ],
+
+    footer: {
+      message: 'Released under the MIT License.',
+      copyright:
+        'Copyright © 2023-PRESENT Wujue',
+    },
   },
   srcDir: './src'
 })

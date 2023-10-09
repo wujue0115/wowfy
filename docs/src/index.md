@@ -2,6 +2,9 @@
 # https://vitepress.dev/reference/default-theme-home-page
 layout: home
 
+title: Wowfy
+titleTemplate: JS Animation Library
+
 hero:
   name: "Wowfy"
   text: "An awesome and easy-to-use JavaScript animation library."
@@ -13,12 +16,18 @@ hero:
     - theme: alt
       text: Effects
       link: /effects/ripple
+    - theme: alt
+      text: View on Github ⭐
+      link: 'https://github.com/wujue0115/wowfy'
 
 features:
-  - title: Feature A
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature B
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature C
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  - icon: 🔧
+    title: Easy And Quick To Get Started
+    details: Easily use through HTML tag attributes or JavaScript.
+  - icon: 🎨
+    title: Customized Style
+    details: Set up your preferred special effects style.
+  - icon: ✓
+    title: Fully TypeScript
+    details: Wowfy is written in TypeScript.
 ---
