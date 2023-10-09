@@ -272,6 +272,8 @@ export class Ripple {
       Math.max(1, this._option.repeatCount),
       Ripple.rippleRepeatCountThreshold
     );
+    this.addRippleEffect(event);
+    --repeatCount;
     const interval = setInterval(() => {
       if (repeatCount-- === 0) {
         clearInterval(interval);
