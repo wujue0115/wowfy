@@ -69,7 +69,7 @@ The events that trigger the ripple animation, it is recommended to use "mousedow
 The mode has two values: "keep" and "unkeep". **When set to "keep", the animation will only be maintained as long as the event remains in the event state** (for example, when the event is set to "mousedown", and the mode is set to "keep", the animation will continue only while the mouse button is held down). Conversely, with "unkeep", the animation runs until it stops as soon as the event is triggered.
 
 :::warning
-When the mode is set to "unkeep", the event must be either "mousedown" or "mouseenter". The former removes the animation on "mouseup", while the latter does so on "mouseleave".
+When the mode is set to "unkeep", the event must be either "mousedown" or "mouseenter". The former removes the animation when "mouseup" is triggered, while the latter does so when "mouseleave" is triggered.
 :::
 
 ### position
