@@ -16,8 +16,10 @@ After Wowfy initialization, you can quickly configure effects within HTML tags.
 
 **Here are some concise guidelines:**
 - All attributes related to Wowfy within HTML tags are prefixed with "w-".
+- All attributes should be `kebab-cased`.
 - Be sure to set the effect attribute.
 - Each effect attribute provides different option attributes; make sure not to use option attributes that are not provided by the specific effect.
+- Please do not set attributes repeatedly in HTML tags.
 
 ### Example
 Follow these steps to easily apply an effect. 
@@ -30,7 +32,7 @@ First, choose your preferred effect, and add it to the target tag (in our exampl
 </div>
 ```
 
-Next, configure the option attributes that are related to the 'ripple' effect (you can find more details on the [Ripple]()).
+Next, set the option attributes related to the 'ripple' effect (you can find more details in the [Ripple option](/effects/ripple#option)).
 
 ```html:line-numbers
 <div 
@@ -50,7 +52,7 @@ Every option attribute has default values. If you don't set the attributes, the 
 
 Using JavaScript to configure effect provides you with the flexibility to customize styles and create more intricate visual effects.
 
-You can use the Wowfy class to bind HTML element and configure effect. The Wowfy constructor takes three parameters: the first one is the target HTML element, the second one is the target element's effect, and the third one is the effect's options. As shown in the example below:
+You can use the Wowfy class to bind HTML element and configure effect. The Wowfy constructor takes three parameters: the first one is the target HTML element, the second one is the target element's effect, and the third one is the effect's option. As shown in the example below:
 
 ```js:line-numbers
 const wowfy = new Wowfy(/* element */, /* effect */, /* option */);
@@ -59,6 +61,10 @@ const wowfy = new Wowfy(/* element */, /* effect */, /* option */);
 ### Example
 
 If you are using the Global import method, you can directly use the Wowfy class within the script tag.
+
+:::tip NOTICE
+It's important to note that when specifying attributes inside the third parameter (option), you should use the `camelCase` naming convention for those attributes.
+:::
 
 ```html:line-numbers
 <html>
