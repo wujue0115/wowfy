@@ -28,7 +28,10 @@
     "url": "https://github.com/Wujue0115/wowfy/issues"
   },
   "type": "module",
-  "main": "./dist/wowfy.esm.js",
+  "main": "./dist/wowfy.cjs.js",
+  "module": "./dist/wowfy.esm.js",
+  "unpkg": "dist/vue.global.js",
+  "jsdelivr": "dist/vue.global.js",
   "types": "./dist/wowfy.d.ts",
   "scripts": {
     "build": "rollup -c rollup.config.js",

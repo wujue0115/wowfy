@@ -19,8 +19,8 @@ const banner = `
 const uglifyOpts = {
   mangle: {
     properties: {
-      regex: /^_/,
-    },
+      regex: /^_/
+    }
   },
   compress: {
     unused: false,
@@ -33,15 +33,15 @@ const uglifyOpts = {
     drop_console: false,
     drop_debugger: false,
     typeofs: false,
-    passes: 4,
+    passes: 4
   },
   output: {
-    preamble: banner,
-  },
+    preamble: banner
+  }
 };
 
 const baseConfig = {
-  plugins: [typescript(), terser(uglifyOpts)],
+  plugins: [typescript(), terser(uglifyOpts)]
 };
 
 export default [
@@ -49,21 +49,25 @@ export default [
     input: "src/index.ts",
     output: [
       {
-        file: "dist/wowfy.esm.js",
-        format: "es",
+        file: pkg.main,
+        format: "cjs"
       },
+      {
+        file: pkg.module,
+        format: "es"
+      }
     ],
-    ...baseConfig,
+    ...baseConfig
   },
   {
-    input: "src/iife.ts",
+    input: "src/global.ts",
     output: [
       {
-        file: "dist/wowfy.iife.js",
-        format: "iife",
-        name: "Wowfy",
-      },
+        file: pkg.unpkg,
+        format: "umd",
+        name: "Wowfy"
+      }
     ],
-    ...baseConfig,
-  },
+    ...baseConfig
+  }
 ];
