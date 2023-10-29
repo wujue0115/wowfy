@@ -130,7 +130,7 @@ If you are using the ES Module import method, please import the Wowfy class, as 
 The following examples are all used within Vue 3 [Composition API](https://vuejs.org/guide/extras/composition-api-faq.html).
 :::
 
-You can import the required functions or classes in SFC ([Single File Component](https://vuejs.org/guide/scaling-up/sfc.html)) as shown in the 6th line after installing Wowfy using a package manager.
+You can import the required functions or classes in SFC ([Single File Component](https://vuejs.org/guide/scaling-up/sfc.html)) as shown in the 7th line after installing Wowfy using a package manager.
 
 ```vue:line-numbers
 <template>
@@ -138,7 +138,7 @@ You can import the required functions or classes in SFC ([Single File Component]
 </template>
 
 <script setup>
-import { onMounted } from 'vue' // [!code hl]
+import { onMounted } from 'vue';
 import { Wowfy, wowfyInit } from "wowfy"; // [!code hl]
 ...
 </script>
@@ -164,7 +164,7 @@ If you want to use it within an HTML tag, please call wowfyInit() within onMount
 </template>
 
 <script setup>
-import { onMounted } from 'vue' // [!code hl]
+import { onMounted } from 'vue'; // [!code hl]
 import { wowfyInit } from "wowfy"; // [!code hl]
 
 onMounted(() => { // [!code hl]
@@ -188,7 +188,7 @@ If you want to operate through JavaScript, it is recommended to obtain the DOM e
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue' // [!code hl]
+import { ref, onMounted } from 'vue'; // [!code hl]
 import { Wowfy } from "wowfy"; // [!code hl]
 
 const btnRef = ref(null) // [!code hl]

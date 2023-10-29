@@ -86,10 +86,6 @@ The starting position of the ripple when triggered, and it supports shorthand no
 | -------- | ------- | ------ |
 | `number` | `1`     | `0.0 < value ≤ 1.0` |
 
-- **Type**: `number`
-- **Default**: `1`
-- range
-
 The size ratio of the ripple.
 
 ### duration
@@ -159,23 +155,23 @@ type TRipplePosition =
   | "top-right"
   | "bottom-left"
   | "bottom-right"
-  | "left-top" // same as the "top-left"
-  | "left-bottom" // same as the "bottom-left"
-  | "right-top" // same as the "top-right"
+  | "left-top"     // same as the "top-left"
+  | "left-bottom"  // same as the "bottom-left"
+  | "right-top"    // same as the "top-right"
   | "right-bottom" // same as the "bottom-right"
-  | "cs" // same as the "cursor"
-  | "ct" // same as the "center"
-  | "rd" // same as the "random"
-  | "t" // same as the "top"
-  | "b" // same as the "bottom"
-  | "l" // same as the "right"
-  | "r" // same as the "left"
-  | "tl" // same as the "top-left"
-  | "tr" // same as the "top-right"
-  | "bl" // same as the "bottom-left"
-  | "br" // same as the "bottom-right"
-  | "lt" // same as the "top-left"
-  | "lb" // same as the "bottom-left"
-  | "rt" // same as the "top-right"
-  | "rb"; // same as the "bottom-right"
+  | "cs"           // same as the "cursor"
+  | "ct"           // same as the "center"
+  | "rd"           // same as the "random"
+  | "t"            // same as the "top"
+  | "b"            // same as the "bottom"
+  | "l"            // same as the "right"
+  | "r"            // same as the "left"
+  | "tl"           // same as the "top-left"
+  | "tr"           // same as the "top-right"
+  | "bl"           // same as the "bottom-left"
+  | "br"           // same as the "bottom-right"
+  | "lt"           // same as the "top-left"
+  | "lb"           // same as the "bottom-left"
+  | "rt"           // same as the "top-right"
+  | "rb";          // same as the "bottom-right"
 ```
