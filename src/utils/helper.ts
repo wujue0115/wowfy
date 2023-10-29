@@ -1,5 +1,5 @@
 export function isValidTimeFormat(input: string): boolean {
-  const regex = /^\d+([0-9]*)?(ms|s)$/;
+  const regex = /^(\d+(\.\d+)?|\.\d+)(ms|s)$/;
   return regex.test(input);
 }
 
