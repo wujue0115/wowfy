@@ -2,7 +2,7 @@
   "name": "wowfy",
   "version": "0.1.0",
   "description": "An awesome and easy-to-use JavaScript animation library.",
-  "homepage": "",
+  "homepage": "https://wowfyjs.com",
   "license": "MIT",
   "author": {
     "name": "Wujue",
@@ -11,6 +11,7 @@
   },
   "keywords": [
     "wowfy",
+    "javascript library",
     "animation",
     "ripple"
   ],
@@ -30,14 +31,14 @@
   "type": "module",
   "main": "./dist/wowfy.cjs.js",
   "module": "./dist/wowfy.esm.js",
-  "unpkg": "dist/vue.global.js",
-  "jsdelivr": "dist/vue.global.js",
+  "unpkg": "dist/wowfy.global.js",
+  "jsdelivr": "dist/wowfy.global.js",
   "types": "./dist/wowfy.d.ts",
   "scripts": {
     "build": "rollup -c rollup.config.js",
     "build-dts": "tsc -b tsconfig.build.json && rollup -c rollup.dts.config.js",
-    "lint": "eslint --ext \".ts,.js,.vue\" --ignore-path .eslintignore .",
-    "lint-fix": "eslint --fix --ext \".ts,.js,.vue\" --ignore-path .eslintignore .",
+    "lint": "eslint --ext \".ts,.js\" --ignore-path .eslintignore .",
+    "lint-fix": "eslint --fix --ext \".ts,.js\" --ignore-path .eslintignore .",
     "clean": "rimraf dist && rimraf types"
   },
   "devDependencies": {
