@@ -11,6 +11,7 @@
   },
   "keywords": [
     "wowfy",
+    "wowfyjs",
     "javascript library",
     "animation",
     "ripple"
@@ -31,8 +32,8 @@
   "type": "module",
   "main": "./dist/wowfy.cjs.js",
   "module": "./dist/wowfy.esm.js",
-  "unpkg": "dist/wowfy.global.js",
-  "jsdelivr": "dist/wowfy.global.js",
+  "unpkg": "./dist/wowfy.global.js",
+  "jsdelivr": "./dist/wowfy.global.js",
   "types": "./dist/wowfy.d.ts",
   "scripts": {
     "build": "rollup -c rollup.config.js",
