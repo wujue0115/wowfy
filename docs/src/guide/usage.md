@@ -81,7 +81,7 @@ It's important to note that when specifying attributes inside the third paramete
     ...
     <script>
       const btn = document.querySelector(".btn"); // [!code hl]
-      const wowfyBtn = new Wowfy(btn, "ripple", { // [!code hl]
+      const wow = new Wowfy(btn, "ripple", { // [!code hl]
         duration: "1s", // [!code hl]
         background: "#fffa", // [!code hl]
       }); // [!code hl]
@@ -115,7 +115,7 @@ If you are using the ES Module import method, please import the Wowfy class, as 
       import { Wowfy } from "wowfy"; // [!code hl]
 
       const btn = document.querySelector(".btn"); // [!code hl]
-      const wowfyBtn = new Wowfy(btn, "ripple", { // [!code hl]
+      const wow = new Wowfy(btn, "ripple", { // [!code hl]
         duration: "1s", // [!code hl]
         background: "#fffa", // [!code hl]
       }); // [!code hl]
@@ -182,7 +182,7 @@ If you want to operate through JavaScript, it is recommended to obtain the DOM e
 
 ```vue:line-numbers
 <template>
-  <div ref="btnRef" class="btn"> // [!code hl]
+  <div ref="btnRef"> // [!code hl]
     Wowfy // [!code hl]
   </div> // [!code hl]
 </template>
@@ -191,10 +191,10 @@ If you want to operate through JavaScript, it is recommended to obtain the DOM e
 import { ref, onMounted } from 'vue'; // [!code hl]
 import { Wowfy } from "wowfy"; // [!code hl]
 
-const btnRef = ref(null) // [!code hl]
+const btnRef = ref(null); // [!code hl]
 
 onMounted(() => { // [!code hl]
-  const wowfyBtn = new Wowfy(btnRef, "ripple", { // [!code hl]
+  const wow = new Wowfy(btnRef.value, "ripple", { // [!code hl]
     duration: "1s", // [!code hl]
     background: "#fffa", // [!code hl]
   }); // [!code hl]
@@ -206,3 +206,31 @@ onMounted(() => { // [!code hl]
 ... 
 </style>
 ```
+
+:::warning
+If you want to add effects to a component, please make sure to use the [$el](https://vuejs.org/api/component-instance.html#el) property to obtain the root DOM node of the component, just like in the usage example in line 14 below.
+```vue:line-numbers
+<template>
+  <MyComponent ref="myComponentRef" />
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import { Wowfy } from "wowfy";
+
+const myComponentRef = ref(null);
+
+onMounted(() => {
+  const wow = new Wowfy(myComponentRef.value.$el, "ripple", { // [!code hl]
+    duration: "1s",
+    background: "#fffa",
+  });
+})
+...
+</script>
+
+<style scoped>
+... 
+</style>
+```
+:::
