@@ -70,7 +70,7 @@ It's important to note that when specifying attributes inside the third paramete
 <html>
   <head>
     ...
-    <script src="/dist/wowfy.global.js"></script> // [!code hl]
+    <script src="https://unpkg.com/wowfy/dist/wowfy.global.js"></script> // [!code hl]
     ...
   </head>
   <body>
@@ -99,7 +99,7 @@ If you are using the ES Module import method, please import the Wowfy class, as 
     <script type="importmap"> // [!code hl]
       { // [!code hl]
         "imports": { // [!code hl]
-          "wowfy": "/dist/wowfy.esm-browser.js" // [!code hl]
+          "wowfy": "https://unpkg.com/wowfy/dist/wowfy.esm.js" // [!code hl]
         } // [!code hl]
       } // [!code hl]
     </script> // [!code hl]
