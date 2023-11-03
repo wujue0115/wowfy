@@ -97,7 +97,7 @@ pnpm install wowfy
 <html>
   <head>
     ...
-    <script src="/dist/wowfy.global.js"></script>
+    <script src="https://unpkg.com/wowfy/dist/wowfy.global.js"></script>
     ...
   </head>
   <body>
