@@ -18,7 +18,7 @@ The Global import method is as follows:
 <html>
   <head>
     ...
-    <script src="/dist/wowfy.global.js"></script> // [!code hl]
+    <script src="https://unpkg.com/wowfy/dist/wowfy.global.js"></script> // [!code hl]
     ...
   </head>
   <body>
@@ -41,7 +41,7 @@ The simple usage of the "ripple" effect is demonstrated in lines 9-11 below:
 <html>
   <head>
     ...
-    <script src="/dist/wowfy.global.js"></script>
+    <script src="https://unpkg.com/wowfy/dist/wowfy.global.js"></script>
     ...
   </head>
   <body>
@@ -70,7 +70,7 @@ The ES Module import method is as follows:
   <body>
     ...
     <script type="module">
-      import { wowfyInit } from "/dist/wowfy.esm-browser.js"; // [!code hl]
+      import { wowfyInit } from "https://unpkg.com/wowfy/dist/wowfy.esm.js"; // [!code hl]
 
       wowfyInit(); // [!code hl]
     </script>
@@ -101,7 +101,7 @@ After importing "wowfyInit" function and setting up Wowfy initialization, you ca
     </div>
     ...
     <script type="module">
-      import { wowfyInit } from "/dist/wowfy.esm-browser.js";
+      import { wowfyInit } from "https://unpkg.com/wowfy/dist/wowfy.esm.js";
 
       wowfyInit();
     </script>
@@ -120,7 +120,7 @@ This is another way to import ES Modules. [Import Maps](https://developer.mozill
     <script type="importmap">
       {
         "imports": {
-          "wowfy": "/dist/wowfy.esm-browser.js"
+          "wowfy": "https://unpkg.com/wowfy/dist/wowfy.esm.js"
         }
       }
     </script>
