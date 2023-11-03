@@ -35,6 +35,5 @@ export default defineConfig({
       copyright: "Copyright © 2023-PRESENT Wujue"
     }
   },
-  srcDir: "./src",
-  base: "/wowfy/"
+  srcDir: "./src"
 });
