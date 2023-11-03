@@ -34,7 +34,7 @@ const wowfyRipple = new Wowfy(
 
 | Type     | Default       |
 | -------- | ------------- |
-| `string` | `"#ffe8d1aa"` |
+| `string` | `"#ff98cfaa"` |
 
 The background style of the ripple can be set with CSS [color values](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value), and it also supports [radial-gradient()](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/radial-gradient).
 
