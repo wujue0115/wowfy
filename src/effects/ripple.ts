@@ -9,7 +9,7 @@ import {
 
 const defaultRippleOptions: TRippleOption = {
   event: "mousedown",
-  background: "#ffe8d1aa",
+  background: "#ff98cfaa",
   duration: "500ms",
   timingFunction: "ease-in",
   mode: "unkeep",
