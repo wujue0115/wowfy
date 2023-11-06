@@ -52,7 +52,7 @@ Every option attribute has default values. If you don't set the attributes, the 
 
 Using JavaScript to configure effect provides you with the flexibility to customize styles and create more intricate visual effects.
 
-You can use the Wowfy class to bind HTML element and configure effect. The Wowfy constructor takes three parameters: the first one is the target HTML element, the second one is the target element's effect, and the third one is the effect's option. As shown in the example below:
+You can use the Wowfy class to bind HTML element and configure effect. The Wowfy constructor takes three arguments: the first one is the target HTML element, the second one is the target element's effect, and the third one is the effect's option. As shown in the example below:
 
 ```js:line-numbers
 const wowfy = new Wowfy(/* element */, /* effect */, /* option */);
@@ -63,7 +63,7 @@ const wowfy = new Wowfy(/* element */, /* effect */, /* option */);
 If you are using the Global import method, you can directly use the Wowfy class within the script tag.
 
 :::tip NOTICE
-It's important to note that when specifying attributes inside the third parameter (option), you should use the `camelCase` naming convention for those attributes.
+It's important to note that when specifying attributes inside the third argument (option), you should use the `camelCase` naming convention for those attributes.
 :::
 
 ```html:line-numbers
@@ -169,7 +169,7 @@ import { wowfyInit } from "wowfy"; // [!code hl]
 
 onMounted(() => { // [!code hl]
   wowfyInit(); // [!code hl]
-}) // [!code hl]
+}); // [!code hl]
 ...
 </script>
 
@@ -178,7 +178,7 @@ onMounted(() => { // [!code hl]
 </style>
 ```
 
-If you want to operate through JavaScript, it is recommended to obtain the DOM element instance using Vue 3 [template refs](https://vuejs.org/guide/essentials/template-refs.html) after it's mounted, and then create a Wowfy instance and set the parameters. Please refer to the following example:
+If you want to operate through JavaScript, it is recommended to obtain the DOM element instance using Vue 3 [template refs](https://vuejs.org/guide/essentials/template-refs.html) after it's mounted, and then create a Wowfy instance and set the arguments. Please refer to the following example:
 
 ```vue:line-numbers
 <template>
@@ -198,7 +198,7 @@ onMounted(() => { // [!code hl]
     duration: "1s", // [!code hl]
     background: "#fffa", // [!code hl]
   }); // [!code hl]
-}) // [!code hl]
+}); // [!code hl]
 ...
 </script>
 
@@ -225,7 +225,7 @@ onMounted(() => {
     duration: "1s",
     background: "#fffa",
   });
-})
+});
 ...
 </script>
 
