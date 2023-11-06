@@ -19,7 +19,7 @@ When using this effect, be careful not to apply it to HTML tag elements that are
 </div>
 ```
 
-```js [Class parameter]
+```js [Class argument]
 const wowfyRipple = new Wowfy(
   /* element */,
   "ripple", // [!code hl]
