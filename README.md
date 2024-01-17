@@ -1,6 +1,10 @@
 # wowfy.js
 
-Wowfy is a JavaScript animation library for applying a wide range of fascinating, amazing, and eye-catching effects, enhancing the visual appeal of your web projects. It is implemented using JavaScript to create various magical CSS effects and offers user-friendly options for adjusting the effects.
+> Wowfy is a JavaScript animation library for applying a wide range of fascinating, amazing, and eye-catching effects, enhancing the visual appeal of your web projects. It is implemented using JavaScript to create various magical CSS effects and offers user-friendly options for adjusting the effects.
+
+## Demo
+
+[Ripple Demo](https://codepen.io/virrkfus-the-looper/pen/abXZwKv)
 
 ## Documentation
 
