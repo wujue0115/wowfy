@@ -1,5 +1,4 @@
-import type { TRippleOption } from "../effects/types";
+import type { TRippleOptions } from "../effects/types";
 
-export type TEffect = "ripple" | "marquee";
-
-export type TEffectOptions = TRippleOption;
+export type TEffect = "ripple";
+export type TEffectOptions = TRippleOptions;

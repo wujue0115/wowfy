@@ -33,7 +33,7 @@ export type TRipplePosition =
   | "rt"
   | "rb";
 
-export type TRippleOption = {
+export type TRippleOptions = {
   event?: string;
   background?: string;
   duration?: string;
@@ -41,6 +41,7 @@ export type TRippleOption = {
   mode?: TRippleMode;
   position?: TRipplePosition;
   delay?: string;
+  size?: number | false;
   sizeRatio?: number;
   repeatCount?: number;
   repeatInterval?: string;

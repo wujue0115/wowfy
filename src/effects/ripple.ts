@@ -1,4 +1,4 @@
-import type { TRippleOption } from "./types";
+import type { TRippleOptions } from "./types";
 import {
   parseDuration,
   setCSS,
@@ -7,7 +7,7 @@ import {
   parseOptionKeyToAttributeName
 } from "../utils/helper";
 
-const defaultRippleOptions: TRippleOption = {
+const defaulRippleOptionss: TRippleOptions = {
   event: "mousedown",
   background: "#ff98cfaa",
   duration: "500ms",
@@ -15,6 +15,7 @@ const defaultRippleOptions: TRippleOption = {
   mode: "unkeep",
   position: "cs",
   delay: "0ms",
+  size: false,
   sizeRatio: 1,
   repeatCount: 1,
   repeatInterval: "0ms",
@@ -40,11 +41,11 @@ export class Ripple {
 
   constructor(
     private _element: HTMLElement,
-    private _option: TRippleOption
+    private _options: TRippleOptions
   ) {
     try {
-      for (const key in defaultRippleOptions) {
-        this._option[key] ||= defaultRippleOptions[key];
+      for (const key in defaulRippleOptionss) {
+        this._options[key] ||= defaulRippleOptionss[key];
       }
       this.validateOption();
     } catch (error) {
@@ -53,8 +54,8 @@ export class Ripple {
   }
 
   // [Getter and Setter]
-  get option() {
-    return this._option;
+  get options() {
+    return this._options;
   }
 
   // [Methods]
@@ -74,22 +75,22 @@ export class Ripple {
     // Remove ripple effect from element when event is triggered.
     this._isListening &&
       this._element.removeEventListener(
-        this._option.event,
+        this._options.event,
         this.addMouseRippleEffect
       );
     // Add ripple effect to element when event is triggered.
     this._element.addEventListener(
-      this._option.event,
+      this._options.event,
       this.addMouseRippleEffect
     );
     this._isListening = true;
   }
 
-  public update(option: TRippleOption) {
+  public update(options: TRippleOptions) {
     try {
-      this._option = {
-        ...this._option,
-        ...option
+      this._options = {
+        ...this._options,
+        ...options
       };
       this.validateOption();
     } catch (error) {
@@ -100,21 +101,21 @@ export class Ripple {
   public destroy() {
     this._rippleWrapper.remove();
     this._element.removeEventListener(
-      this._option.event,
+      this._options.event,
       this.addMouseRippleEffect
     );
     this._isListening = null;
     this._element = null;
-    this._option = null;
+    this._options = null;
   }
 
   // [Methods] Private methods
-  // There is a simpler way to validate the option.
+  // There is a simpler way to validate the options.
   private validateOption() {
     const times = ["duration", "delay", "repeatInterval"];
     for (const time of times) {
-      if (!isValidTimeFormat(this._option[time])) {
-        throw new Error(`"${this._option[time]}" is an invalid time format.`);
+      if (!isValidTimeFormat(this._options[time])) {
+        throw new Error(`"${this._options[time]}" is an invalid time format.`);
       }
     }
   }
@@ -141,9 +142,9 @@ export class Ripple {
       // top: "0",
       // translate: `${x - (rippleSize >> 1)}px ${y - (rippleSize >> 1)}px`,
       borderRadius: "50%",
-      background: this._option.background,
-      outline: this._option.outline,
-      boxShadow: this._option.boxShadow
+      background: this._options.background,
+      outline: this._options.outline,
+      boxShadow: this._options.boxShadow
     });
   }
 
@@ -222,8 +223,8 @@ export class Ripple {
     };
 
     return (
-      positions[this._option.position] ||
-      positions[positionMapping[this._option.position]] ||
+      positions[this._options.position] ||
+      positions[positionMapping[this._options.position]] ||
       positions["cursor"]
     );
   }
@@ -239,7 +240,7 @@ export class Ripple {
 
     const rippleSize =
       Math.ceil(Math.sqrt(maxWidth ** 2 + maxHeight ** 2)) * 2 * 1.1;
-    const customSizeRatio = Math.min(1, Math.max(0, this._option.sizeRatio));
+    const customSizeRatio = Math.min(1, Math.max(0, this._options.sizeRatio));
     const customRippleSize = rippleSize * customSizeRatio;
 
     return Math.min(customRippleSize, Ripple.rippleSizeThreshold);
@@ -250,8 +251,8 @@ export class Ripple {
       scale: "0",
       opacity: "1",
       transitionProperty: "scale, opacity",
-      transitionDuration: this._option.duration,
-      transitionTimingFunction: this._option.timingFunction,
+      transitionDuration: this._options.duration,
+      transitionTimingFunction: this._options.timingFunction,
       willChange: "scale, opacity"
     });
   }
@@ -269,7 +270,7 @@ export class Ripple {
     if (this._timer) return;
 
     let repeatCount = Math.min(
-      Math.max(1, this._option.repeatCount),
+      Math.max(1, this._options.repeatCount),
       Ripple.rippleRepeatCountThreshold
     );
     this.addRippleEffect(event);
@@ -280,7 +281,7 @@ export class Ripple {
         return;
       }
       this.addRippleEffect(event);
-    }, parseDuration(this._option.repeatInterval));
+    }, parseDuration(this._options.repeatInterval));
 
     this._timer = setTimeout(() => {
       this._timer = null;
@@ -290,7 +291,7 @@ export class Ripple {
   private addRippleEffect(event?: MouseEvent) {
     // Remove the first ripple when the number of ripples exceeds the threshold.
     const maxCount = Math.min(
-      Math.max(1, this._option.maxCount),
+      Math.max(1, this._options.maxCount),
       Ripple.rippleCountThreshold
     );
     while (this._rippleInstances.length >= maxCount) {
@@ -298,7 +299,7 @@ export class Ripple {
     }
 
     const { x, y } = this.getRipplePosition(event);
-    const rippleSize = this.caculateRippleSize(x, y);
+    const rippleSize = this._options.size || this.caculateRippleSize(x, y);
     const ripple = this.createRipple(rippleSize, x, y);
     const rippleIndex = this._rippleInstances.length;
     this._rippleInstances.push(ripple);
@@ -317,15 +318,15 @@ export class Ripple {
         this.endRippleAnimation(ripple);
 
         if (
-          this._option.mode === "keep" &&
-          (this._option.event === "mousedown" ||
-            this._option.event === "mouseenter")
+          this._options.mode === "keep" &&
+          (this._options.event === "mousedown" ||
+            this._options.event === "mouseenter")
         ) {
           const unlockKeepEvent =
             {
               mousedown: "mouseup",
               mouseenter: "mouseleave"
-            }[this._option.event] || "mouseleave";
+            }[this._options.event] || "mouseleave";
 
           this._element.addEventListener(
             unlockKeepEvent,
@@ -344,9 +345,9 @@ export class Ripple {
             ripple.remove();
             this._rippleInstances.splice(rippleIndex, 1);
           },
-          parseDuration(this._option.duration) * 1.1
+          parseDuration(this._options.duration) * 1.1
         );
-      }, parseDuration(this._option.delay));
+      }, parseDuration(this._options.delay));
     });
   }
 }
@@ -354,13 +355,13 @@ export class Ripple {
 export function rippleInit() {
   const elements = document.querySelectorAll<HTMLElement>("[w-ripple]");
   for (const element of elements) {
-    const option = {};
-    for (const key in defaultRippleOptions) {
+    const options = {};
+    for (const key in defaulRippleOptionss) {
       const attributeName = parseOptionKeyToAttributeName(key);
       const attributeValue = element.getAttribute(attributeName);
-      option[key] = attributeValue;
+      options[key] = attributeValue;
     }
-    const ripple = new Ripple(element, option as TRippleOption);
+    const ripple = new Ripple(element, options as TRippleOptions);
     ripple.setEffect();
   }
 }

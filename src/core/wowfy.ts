@@ -11,11 +11,11 @@ export class Wowfy {
   constructor(
     private _element: HTMLElement,
     private _effect: TEffect,
-    option: TEffectOptions
+    options: TEffectOptions
   ) {
     this._effectInstance = new EffectInstances[this._effect](
       this._element,
-      option
+      options
     );
     this._effectInstance.setEffect();
   }
@@ -25,22 +25,22 @@ export class Wowfy {
     return this._effect;
   }
 
-  get option() {
-    return this._effectInstance.option;
+  get options() {
+    return this._effectInstance.options;
   }
 
   // [Methods]
   // [Methods] Public methods
-  public update(effect: TEffect, option: TEffectOptions) {
+  public update(effect: TEffect, options: TEffectOptions) {
     if (effect !== this._effect) {
       this._effectInstance.destroy();
       this._effectInstance = new EffectInstances[effect as TEffect](
         this._element,
-        option
+        options
       );
     }
 
-    this._effectInstance.update(option);
+    this._effectInstance.update(options);
     this._effectInstance.setEffect();
   }
 
