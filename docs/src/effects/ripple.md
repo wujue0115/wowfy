@@ -23,12 +23,12 @@ When using this effect, be careful not to apply it to HTML tag elements that are
 const wowfyRipple = new Wowfy(
   /* element */,
   "ripple", // [!code hl]
-  /* option */
+  /* options */
 );
 ```
 :::
 
-## Option
+## Options
 
 ### background
 
@@ -79,6 +79,14 @@ When the mode is set to "unkeep", the event must be either "mousedown" or "mouse
 | [`TRipplePosition`](ripple.md#types-trippleposition) | `"cs"` |
 
 The starting position of the ripple when triggered, and it supports shorthand notation (for example, "cursor" can be written as "cs", or "top-right" can be written as "tr" or "rt"). Detailed values can be found in [`TRipplePosition`](ripple.md#types-trippleposition).
+
+### size
+
+| Type     | Default | Range  |
+| -------- | ------- | ------ |
+| `number` \| `false` | `false` | `0 < value ≤ 2000` |
+
+The number of pixels for the ripple size. If set to 'false', the size will be appropriately calculated based on the element's size.
 
 ### sizeRatio
 

@@ -18,7 +18,7 @@ After Wowfy initialization, you can quickly configure effects within HTML tags.
 - All attributes related to Wowfy within HTML tags are prefixed with "w-".
 - All attributes should be `kebab-cased`.
 - Be sure to set the effect attribute.
-- Each effect attribute provides different option attributes; make sure not to use option attributes that are not provided by the specific effect.
+- Each effect attribute provides different options attributes; make sure not to use options attributes that are not provided by the specific effect.
 - Please do not set attributes repeatedly in HTML tags.
 
 ### Example
@@ -32,7 +32,7 @@ First, choose your preferred effect, and add it to the target tag (in our exampl
 </div>
 ```
 
-Next, set the option attributes related to the 'ripple' effect (you can find more details in the [Ripple option](/effects/ripple#option)).
+Next, set the options attributes related to the 'ripple' effect (you can find more details in the [Ripple options](/effects/ripple#options)).
 
 ```html:line-numbers
 <div 
@@ -44,18 +44,18 @@ Next, set the option attributes related to the 'ripple' effect (you can find mor
 </div>
 ```
 
-:::info The default value of option attribute
-Every option attribute has default values. If you don't set the attributes, the default settings will be applied.
+:::info The default value of options attribute
+Every options attribute has default values. If you don't set the attributes, the default settings will be applied.
 :::
 
 ## In JavaScript
 
 Using JavaScript to configure effect provides you with the flexibility to customize styles and create more intricate visual effects.
 
-You can use the Wowfy class to bind HTML element and configure effect. The Wowfy constructor takes three arguments: the first one is the target HTML element, the second one is the target element's effect, and the third one is the effect's option. As shown in the example below:
+You can use the Wowfy class to bind HTML element and configure effect. The Wowfy constructor takes three arguments: the first one is the target HTML element, the second one is the target element's effect, and the third one is the effect's options. As shown in the example below:
 
 ```js:line-numbers
-const wowfy = new Wowfy(/* element */, /* effect */, /* option */);
+const wowfy = new Wowfy(/* element */, /* effect */, /* options */);
 ```
 
 ### Example
@@ -63,7 +63,7 @@ const wowfy = new Wowfy(/* element */, /* effect */, /* option */);
 If you are using the Global import method, you can directly use the Wowfy class within the script tag.
 
 :::tip NOTICE
-It's important to note that when specifying attributes inside the third argument (option), you should use the `camelCase` naming convention for those attributes.
+It's important to note that when specifying attributes inside the third argument (options), you should use the `camelCase` naming convention for those attributes.
 :::
 
 ```html:line-numbers
@@ -208,7 +208,7 @@ onMounted(() => { // [!code hl]
 ```
 
 :::warning
-If you want to add effects to a component, please make sure to use the [$el](https://vuejs.org/api/component-instance.html#el) property to obtain the root DOM node of the component, just like in the usage example in line 14 below.
+If you want to add effects to a component, please make sure to use the [$el](https://vuejs.org/api/component-instance.html#el) property to obtain the root DOM node of the component, just like in the usage example in line 12 below.
 ```vue:line-numbers
 <template>
   <MyComponent ref="myComponentRef" />
