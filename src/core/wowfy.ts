@@ -11,7 +11,7 @@ export class Wowfy {
   constructor(
     private _element: HTMLElement,
     private _effect: TEffect,
-    options: TEffectOptions
+    options: TEffectOptions = {}
   ) {
     this._effectInstance = new EffectInstances[this._effect](
       this._element,
