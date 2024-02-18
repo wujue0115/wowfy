@@ -38,6 +38,7 @@
   "scripts": {
     "build": "rollup -c rollup.config.js",
     "build-dts": "tsc -b tsconfig.build.json && rollup -c rollup.dts.config.js",
+    "build-all": "pnpm build && pnpm build-dts",
     "lint": "eslint --ext \".ts,.js\" --ignore-path .eslintignore .",
     "lint-fix": "eslint --fix --ext \".ts,.js\" --ignore-path .eslintignore .",
     "clean": "rimraf dist && rimraf types"
