@@ -34,7 +34,10 @@ export class Wowfy {
   public update(effect: TEffect, option: TEffectOptions) {
     if (effect !== this._effect) {
       this._effectInstance.destroy();
-      this._effectInstance = new EffectInstances[effect](this._element, option);
+      this._effectInstance = new EffectInstances[effect as TEffect](
+        this._element,
+        option
+      );
     }
 
     this._effectInstance.update(option);

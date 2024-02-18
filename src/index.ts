@@ -5,4 +5,6 @@ function wowfyInit() {
   rippleInit();
 }
 
+export type * from "./core/types";
+export type * from "./effects/types";
 export { Wowfy, wowfyInit, rippleInit };
