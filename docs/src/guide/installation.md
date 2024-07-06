@@ -70,7 +70,7 @@ The ES Module import method is as follows:
   <body>
     ...
     <script type="module">
-      import { wowfyInit } from "https://unpkg.com/wowfy/dist/wowfy.esm.js"; // [!code hl]
+      import { wowfyInit } from "https://unpkg.com/wowfy/dist/wowfy.mjs"; // [!code hl]
 
       wowfyInit(); // [!code hl]
     </script>
@@ -101,7 +101,7 @@ After importing "wowfyInit" function and setting up Wowfy initialization, you ca
     </div>
     ...
     <script type="module">
-      import { wowfyInit } from "https://unpkg.com/wowfy/dist/wowfy.esm.js";
+      import { wowfyInit } from "https://unpkg.com/wowfy/dist/wowfy.mjs";
 
       wowfyInit();
     </script>
@@ -120,7 +120,7 @@ This is another way to import ES Modules. [Import Maps](https://developer.mozill
     <script type="importmap">
       {
         "imports": {
-          "wowfy": "https://unpkg.com/wowfy/dist/wowfy.esm.js"
+          "wowfy": "https://unpkg.com/wowfy/dist/wowfy.mjs"
         }
       }
     </script>

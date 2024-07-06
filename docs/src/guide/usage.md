@@ -99,7 +99,7 @@ If you are using the ES Module import method, please import the Wowfy class, as 
     <script type="importmap"> // [!code hl]
       { // [!code hl]
         "imports": { // [!code hl]
-          "wowfy": "https://unpkg.com/wowfy/dist/wowfy.esm.js" // [!code hl]
+          "wowfy": "https://unpkg.com/wowfy/dist/wowfy.mjs" // [!code hl]
         } // [!code hl]
       } // [!code hl]
     </script> // [!code hl]
