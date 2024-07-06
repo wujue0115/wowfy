@@ -30,8 +30,8 @@
     "url": "https://github.com/Wujue0115/wowfy/issues"
   },
   "type": "module",
-  "main": "./dist/wowfy.cjs.js",
-  "module": "./dist/wowfy.esm.js",
+  "main": "./dist/wowfy.cjs",
+  "module": "./dist/wowfy.mjs",
   "unpkg": "./dist/wowfy.global.js",
   "jsdelivr": "./dist/wowfy.global.js",
   "types": "./dist/wowfy.d.ts",
