@@ -47,7 +47,7 @@ The ES Module import method is as follows:
   <body>
     ...
     <script type="module">
-      import { wowfyInit } from "https://unpkg.com/wowfy/dist/wowfy.esm.js";
+      import { wowfyInit } from "https://unpkg.com/wowfy/dist/wowfy.mjs";
 
       wowfyInit();
     </script>
