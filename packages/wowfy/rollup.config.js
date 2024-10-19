@@ -1,4 +1,5 @@
-import typescript from "@rollup/plugin-typescript";
+// import typescript from "@rollup/plugin-typescript";
+import typescript from "rollup-plugin-typescript2";
 import terser from "@rollup/plugin-terser";
 import pkg from "./package.json" assert { type: "json" };
 
@@ -16,11 +17,11 @@ const banner = `
  */
 `.trim();
 
-const uglifyOpts = {
+const minifyOptions = {
   mangle: {
     properties: {
-      regex: /^_/
-    }
+      regex: /^_/,
+    },
   },
   compress: {
     unused: false,
@@ -33,15 +34,15 @@ const uglifyOpts = {
     drop_console: false,
     drop_debugger: false,
     typeofs: false,
-    passes: 4
+    passes: 4,
   },
   output: {
-    preamble: banner
-  }
+    preamble: banner,
+  },
 };
 
 const baseConfig = {
-  plugins: [typescript(), terser(uglifyOpts)]
+  plugins: [typescript(), /*terser(minifyOptions)*/],
 };
 
 export default [
@@ -50,24 +51,24 @@ export default [
     output: [
       {
         file: pkg.main,
-        format: "cjs"
+        format: "cjs",
       },
       {
         file: pkg.module,
-        format: "es"
-      }
+        format: "es",
+      },
     ],
-    ...baseConfig
+    ...baseConfig,
   },
   {
     input: "src/global.ts",
     output: [
       {
         file: pkg.unpkg,
-        format: "umd",
-        name: "Wowfy"
-      }
+        format: "iife",
+        name: "Wowfy",
+      },
     ],
-    ...baseConfig
-  }
+    ...baseConfig,
+  },
 ];

@@ -1,0 +1,45 @@
+{
+  "name": "@wowfy/core",
+  "type": "module",
+  "version": "0.3.0",
+  "description": "An awesome and easy-to-use JavaScript animation library.",
+  "author": {
+    "name": "Wujue",
+    "email": "wujue0115@gmail.com",
+    "githubLink": "https://github.com/Wujue0115"
+  },
+  "license": "MIT",
+  "homepage": "https://wowfyjs.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wujue0115/wowfy"
+  },
+  "bugs": {
+    "url": "https://github.com/Wujue0115/wowfy/issues"
+  },
+  "keywords": [
+    "wowfy",
+    "wowfyjs",
+    "javascript library",
+    "animation",
+    "ripple"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "rimraf dist && rollup -c"
+  }
+}
