@@ -1,7 +1,8 @@
-// import typescript from "@rollup/plugin-typescript";
-import typescript from "rollup-plugin-typescript2";
-import terser from "@rollup/plugin-terser";
-import pkg from "./package.json" assert { type: "json" };
+import { readFileSync } from 'node:fs'
+import typescript from 'rollup-plugin-typescript2'
+import terser from '@rollup/plugin-terser'
+
+const pkg = JSON.parse(readFileSync('package.json', 'utf-8'))
 
 const banner = `
 /**
@@ -15,7 +16,7 @@ const banner = `
  * @license ${pkg.license}
  * @link ${pkg.homepage}
  */
-`.trim();
+`.trim()
 
 const minifyOptions = {
   mangle: {
@@ -39,36 +40,36 @@ const minifyOptions = {
   output: {
     preamble: banner,
   },
-};
+}
 
 const baseConfig = {
-  plugins: [typescript(), /*terser(minifyOptions)*/],
-};
+  plugins: [typescript(), terser(minifyOptions)],
+}
 
 export default [
   {
-    input: "src/index.ts",
+    input: 'src/index.ts',
     output: [
       {
         file: pkg.main,
-        format: "cjs",
+        format: 'cjs',
       },
       {
         file: pkg.module,
-        format: "es",
+        format: 'es',
       },
     ],
     ...baseConfig,
   },
   {
-    input: "src/global.ts",
+    input: 'src/global.ts',
     output: [
       {
         file: pkg.unpkg,
-        format: "iife",
-        name: "Wowfy",
+        format: 'iife',
+        name: 'Wowfy',
       },
     ],
     ...baseConfig,
   },
-];
+]
