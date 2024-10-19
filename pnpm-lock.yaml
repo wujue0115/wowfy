@@ -36,11 +36,7 @@ importers:
         specifier: ^1.0.0-rc.20
         version: 1.2.3(@algolia/client-search@4.24.0)(search-insights@2.14.0)(typescript@5.5.3)
 
-  packages/core:
-    dependencies:
-      '@wowfy/core':
-        specifier: workspace:*
-        version: 'link:'
+  packages/core: {}
 
   packages/wowfy:
     dependencies:

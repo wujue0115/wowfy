@@ -45,7 +45,7 @@ The simple usage of the "ripple" effect is demonstrated in lines 9-11 below:
     ...
   </head>
   <body>
-    <div 
+    <div
       w-ripple
       w-duration="1s"
       w-background="#fff"
@@ -92,7 +92,7 @@ After importing "wowfyInit" function and setting up Wowfy initialization, you ca
     ...
   </head>
   <body>
-    <div 
+    <div
       w-ripple
       w-duration="1s"
       w-background="#fff"
@@ -137,7 +137,6 @@ This is another way to import ES Modules. [Import Maps](https://developer.mozill
 </html>
 ```
 
-
 ## Installing from NPM
 
 You can install Wowfy using package managers like npm, yarn, or pnpm.
@@ -155,5 +154,3 @@ yarn add wowfy
 pnpm install wowfy
 ```
 :::
-
-

@@ -15,7 +15,7 @@ When using this effect, be careful not to apply it to HTML tag elements that are
 <div
   w-ripple // [!code hl]
 >
-  
+
 </div>
 ```
 

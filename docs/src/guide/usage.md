@@ -22,7 +22,7 @@ After Wowfy initialization, you can quickly configure effects within HTML tags.
 - Please do not set attributes repeatedly in HTML tags.
 
 ### Example
-Follow these steps to easily apply an effect. 
+Follow these steps to easily apply an effect.
 
 First, choose your preferred effect, and add it to the target tag (in our example, we select the "ripple" effect).
 
@@ -35,7 +35,7 @@ First, choose your preferred effect, and add it to the target tag (in our exampl
 Next, set the options attributes related to the 'ripple' effect (you can find more details in the [Ripple options](/effects/ripple#options)).
 
 ```html:line-numbers
-<div 
+<div
   w-ripple
   w-duration="1s" // [!code hl]
   w-background="#fa0" // [!code hl]
@@ -144,7 +144,7 @@ import { Wowfy, wowfyInit } from "wowfy"; // [!code hl]
 </script>
 
 <style scoped>
-... 
+...
 </style>
 ```
 
@@ -174,7 +174,7 @@ onMounted(() => { // [!code hl]
 </script>
 
 <style scoped>
-... 
+...
 </style>
 ```
 
@@ -203,7 +203,7 @@ onMounted(() => { // [!code hl]
 </script>
 
 <style scoped>
-... 
+...
 </style>
 ```
 
@@ -230,7 +230,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-... 
+...
 </style>
 ```
 :::

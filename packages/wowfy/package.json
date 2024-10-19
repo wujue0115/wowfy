@@ -32,14 +32,14 @@
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
   "unpkg": "./dist/index.global.js",
   "jsdelivr": "./dist/index.global.js",
+  "types": "./dist/index.d.ts",
   "files": [
-    "dist",
-    "package.json",
+    "LICENSE",
     "README.md",
-    "LICENSE"
+    "dist",
+    "package.json"
   ],
   "scripts": {
     "build": "rimraf dist && rollup -c"
