@@ -21,7 +21,9 @@ export interface Event {
 
 export type EventManager = () => Event
 
-export type TargetElements = string | HTMLElement | HTMLElement[] | NodeList | HTMLCollection
+export type BaseElements = string | HTMLElement | HTMLElement[] | NodeList | HTMLCollection
+
+export type BaseOptions = Record<string, any>
 
 export interface BaseEffect {
   create: () => void
@@ -29,17 +31,26 @@ export interface BaseEffect {
   destroy: () => void
 }
 
-export interface ExtendedEffect extends BaseEffect {
+export interface AnyEffect extends BaseEffect {
   [key: string]: (...args: any) => any
 }
 
-export interface EffectContext<Options = Record<string, any>> {
+export interface BaseContext<Options = BaseOptions> {
   els: HTMLElement[] | Node[]
   options?: Options
-  createStateManager: StateManager
-  createEventManager: EventManager
 }
 
-export type EffectController<Effect extends ExtendedEffect = ExtendedEffect, Options = Record<string, any>> = (context: EffectContext<Options>) => Effect
+export interface AnyContext<Options = BaseOptions> extends BaseContext<Options> {
+  [key: string]: any
+}
+
+export interface CoreContext<Options = BaseOptions> extends AnyContext<Options> {
+  state: State
+  event: Event
+}
+
+export type ContextCreator<Options = BaseOptions> = (el: BaseElements, options?: Options) => CoreContext<Options>
+
+export type EffectController<Effect extends AnyEffect = AnyEffect, Options = BaseOptions> = (context: AnyContext<Options>) => Effect
 
 export type AnyFunction = (...args: any) => any

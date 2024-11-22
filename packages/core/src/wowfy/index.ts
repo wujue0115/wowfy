@@ -1,24 +1,21 @@
 import type {
-  EffectFactory,
-  ExtendedEffect,
-  TargetElements,
+  AnyEffect,
+  BaseElements,
+  BaseOptions,
+  ContextCreator,
+  EffectController,
 } from '../types'
-import { createStateManager } from '../manager/state'
+import { createCoreContext } from '../contexts'
 
-function parseToEls(el: TargetElements): HTMLElement[] | Node[] {
-  if (typeof el === 'string') {
-    return parseToEls(document.querySelectorAll(el))
-  }
-  if (el instanceof NodeList || el instanceof HTMLCollection) {
-    return Array.from(el)
-  }
-  return ([] as HTMLElement[]).concat(el)
-}
-
-export function createWowfy<Effect extends ExtendedEffect = ExtendedEffect, Options = Record<string, any>>(effectFactory: EffectFactory<Effect, Options>) {
-  return (el: TargetElements, options: Options): Effect => {
-    const context = { els: parseToEls(el), options, createStateManager }
-    const effect = effectFactory(context)
+export function createWowfy<
+  Effect extends AnyEffect = AnyEffect,
+  Options = BaseOptions,
+>(
+  effectController: EffectController<Effect, Options>,
+  contextCreator: ContextCreator<Options> = createCoreContext<Options>,
+) {
+  return (el: BaseElements, options?: Options): Effect => {
+    const effect = effectController(contextCreator(el, options))
     effect.create()
     return effect
   }
