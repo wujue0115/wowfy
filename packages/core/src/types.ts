@@ -44,13 +44,13 @@ export interface AnyContext<Options = BaseOptions> extends BaseContext<Options> 
   [key: string]: any
 }
 
-export interface CoreContext<Options = BaseOptions> extends AnyContext<Options> {
+export interface CoreContext<Options = BaseOptions> extends BaseContext<Options> {
   state: State
   event: Event
 }
 
-export type ContextCreator<Options = BaseOptions> = (el: BaseElements, options?: Options) => CoreContext<Options>
+export type ContextCreator<Context extends BaseContext, Options = BaseOptions> = (el: BaseElements, options?: Options) => Context
 
-export type EffectController<Effect extends AnyEffect = AnyEffect, Options = BaseOptions> = (context: AnyContext<Options>) => Effect
+export type EffectController<Effect extends BaseEffect, Options extends BaseOptions, Context extends BaseContext<Options>> = (context: Context) => Effect
 
 export type AnyFunction = (...args: any) => any
