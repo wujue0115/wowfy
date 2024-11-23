@@ -23,8 +23,7 @@ export function createStateManager(): State {
     return Array.from(stateMap.keys()).filter(k => stateMap.get(k))
   }
 
-  const set = (key: StateKey | StateKey[], value?: boolean | boolean[]) => {
-    value ??= true
+  const set = (key: StateKey | StateKey[], value: boolean | boolean[] = true) => {
     if (Array.isArray(key)) {
       key.forEach((k, i) => {
         const newValue = Array.isArray(value) ? value[i] : value
