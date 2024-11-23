@@ -1,5 +1,5 @@
 {
-  "name": "@wowfy/core",
+  "name": "@wowfy/effects",
   "type": "module",
   "version": "0.3.0",
   "description": "An awesome and easy-to-use JavaScript animation library.",
@@ -41,8 +41,5 @@
   ],
   "scripts": {
     "build": "rimraf dist && rollup -c"
-  },
-  "dependencies": {
-    "@wowfy/effects": "workspace:*"
   }
 }

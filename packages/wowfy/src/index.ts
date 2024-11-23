@@ -1,1 +1,1 @@
-export { createWowfy } from '@wowfy/core'
+export * from '@wowfy/core'
