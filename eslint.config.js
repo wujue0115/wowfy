@@ -4,7 +4,6 @@ export default antfu(
   {
     ignores: [
       '**/*.md',
-      '**/rollup.config.js',
     ],
   },
   {

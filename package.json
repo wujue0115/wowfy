@@ -5,7 +5,7 @@
   "private": true,
   "packageManager": "pnpm@9.4.0",
   "scripts": {
-    "build": "pnpm -r run build",
+    "build": "rollup -c",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest"
