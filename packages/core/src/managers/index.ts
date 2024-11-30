@@ -1,2 +1,2 @@
-export { createStateManager } from './state'
-export { createEventManager } from './event'
+export * from './state'
+export * from './event'

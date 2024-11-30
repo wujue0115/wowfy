@@ -1,6 +1,5 @@
 import type {
   AnyEffect,
-  BaseContext,
   BaseEffect,
   BaseElements,
   BaseOptions,
@@ -12,10 +11,10 @@ import { createCoreContext } from '../contexts'
 
 export function createWowfy<
   Effect extends BaseEffect = AnyEffect,
-  Options extends BaseOptions = BaseOptions,
-  Context extends BaseContext<Options> = CoreContext<Options>,
+  Options = BaseOptions,
+  Context = CoreContext<Options>,
 >(
-  effectController: EffectController<Effect, Options, Context>,
+  effectController: EffectController<Effect, Context>,
   contextCreator?: ContextCreator<Context, Options>,
 ) {
   return (el: BaseElements, options?: Options): Effect => {

@@ -20,7 +20,7 @@ const defaulRippleOptions: RippleOptions = {
 }
 
 function validOptions(options: RippleOptions) {
-  const times = ['duration', 'delay', 'repeatInterval']
+  const times: (keyof Pick<RippleOptions, 'duration' | 'delay' | 'repeatInterval'>)[] = ['duration', 'delay', 'repeatInterval']
   for (const time of times) {
     if (!isValidTimeFormat(options[time])) {
       throw new Error(`"${options[time]}" is an invalid time format.`)
@@ -28,14 +28,14 @@ function validOptions(options: RippleOptions) {
   }
 }
 
-function resolveOptions(contextOptions?: RippleOptions) {
+function resolveOptions(contextOptions?: Partial<RippleOptions>): RippleOptions {
   return {
     ...defaulRippleOptions,
     ...contextOptions,
   }
 }
 
-export function createRippleController(context: CoreContext<RippleOptions>): BaseEffect {
+export function createRippleController(context: CoreContext<Partial<RippleOptions>>): BaseEffect {
   const options = resolveOptions(context.options)
 
   validOptions(options)

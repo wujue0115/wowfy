@@ -1,8 +1,6 @@
-import type { BaseOptions } from '@wowfy/core'
+export type RippleMode = 'keep' | 'unkeep'
 
-export type TRippleMode = 'keep' | 'unkeep'
-
-export type TRipplePosition =
+export type RipplePosition =
   | 'cursor'
   | 'center'
   | 'random'
@@ -34,13 +32,13 @@ export type TRipplePosition =
   | 'rt'
   | 'rb'
 
-export interface RippleOptions extends BaseOptions {
+export interface RippleOptions {
   event: string
   background: string
   duration: string
   timingFunction: string
-  mode: TRippleMode
-  position: TRipplePosition
+  mode: RippleMode
+  position: RipplePosition
   delay: string
   size: number | false
   sizeRatio: number

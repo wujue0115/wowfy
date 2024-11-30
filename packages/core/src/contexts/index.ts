@@ -1,7 +1,6 @@
 import type {
   BaseContext,
   BaseElements,
-  BaseOptions,
   CoreContext,
 } from '../types'
 import { createEventManager, createStateManager } from '../managers'
@@ -16,14 +15,14 @@ function resolveElements(el: BaseElements): HTMLElement[] | Node[] {
   return ([] as HTMLElement[]).concat(el)
 }
 
-export function createBaseContext<Options = BaseOptions>(el: BaseElements, options?: Options): BaseContext<Options> {
+export function createBaseContext<Options>(el: BaseElements, options?: Options): BaseContext<Options> {
   return {
     els: resolveElements(el),
     options,
   }
 }
 
-export function createCoreContext<Options = BaseOptions>(el: BaseElements, options?: Options): CoreContext<Options> {
+export function createCoreContext<Options>(el: BaseElements, options?: Options): CoreContext<Options> {
   return {
     ...createBaseContext(el, options),
     state: createStateManager(),
