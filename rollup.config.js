@@ -94,7 +94,7 @@ function buildAllPackages() {
             format: 'es',
           },
         ],
-        plugins: createPlugins(packageJson, false),
+        plugins: createPlugins(packageJson),
       }
     })
 }

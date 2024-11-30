@@ -7,4 +7,5 @@ import { createRippleController } from '@wowfy/effects'
 const createRipple = createWowfy<BaseEffect, Partial<RippleOptions>>(createRippleController)
 
 export * from '@wowfy/core'
+export * from '@wowfy/effects'
 export { createRipple }
