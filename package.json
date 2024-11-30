@@ -5,7 +5,10 @@
   "private": true,
   "packageManager": "pnpm@9.4.0",
   "scripts": {
+    "clean": "rimraf packages/*/dist",
     "build": "rollup -c",
+    "build:dts": "tsc -p tsconfig.build.json && rollup -c rollup.dts.config.js",
+    "build:all": "pnpm run clean && pnpm run build && pnpm run build:dts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest"
@@ -15,11 +18,11 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "2.22.0-beta.3",
-    "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.3",
     "eslint": "^9.6.0",
     "rimraf": "^5.0.8",
     "rollup": "^4.18.0",
+    "rollup-plugin-dts": "^6.1.1",
     "rollup-plugin-typescript2": "^0.36.0",
     "simple-git-hooks": "^2.11.1"
   },

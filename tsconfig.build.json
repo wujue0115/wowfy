@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": true,
+    "declarationDir": "./types",
+    "emitDeclarationOnly": true,
+    "stripInternal": true
+  },
+  "include": [
+    "packages/wowfy/src",
+    "packages/core/src",
+    "packages/effects/src"
+  ]
+}

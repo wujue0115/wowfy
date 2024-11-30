@@ -14,14 +14,6 @@ function getFolderNames(folderPath) {
   }
 }
 
-function removeFolder(folderPath) {
-  try {
-    fs.existsSync(folderPath) && fs.rmdirSync(folderPath, { recursive: true })
-  } catch (err) {
-    throw new Error(`Error removing folder: ${err}`)
-  }
-}
-
 function getJsonData(folderPath) {
   try {
     return JSON.parse(fs.readFileSync(path.join(folderPath, 'package.json'), 'utf-8'))
@@ -85,28 +77,26 @@ function createPlugins(packageJson, isMinified = true, isBanner = true) {
 }
 
 function buildAllPackages() {
-  const packageNames = getFolderNames('packages')
+  return getFolderNames('packages')
+    .map((packageName) => {
+      const packagePath = path.join('packages', packageName)
+      const packageJson = getJsonData(packagePath)
 
-  return packageNames.map((packageName) => {
-    const packagePath = path.join('packages', packageName)
-    const packageJson = getJsonData(packagePath)
-    removeFolder(path.join(packagePath, 'dist'))
-
-    return {
-      input: path.join(packagePath, 'src/index.ts'),
-      output: [
-        {
-          file: path.join(packagePath, 'dist/index.cjs'),
-          format: 'cjs',
-        },
-        {
-          file: path.join(packagePath, 'dist/index.mjs'),
-          format: 'es',
-        },
-      ],
-      plugins: createPlugins(packageJson),
-    }
-  })
+      return {
+        input: path.join(packagePath, 'src/index.ts'),
+        output: [
+          {
+            file: path.join(packagePath, 'dist/index.js'),
+            format: 'cjs',
+          },
+          {
+            file: path.join(packagePath, 'dist/index.mjs'),
+            format: 'es',
+          },
+        ],
+        plugins: createPlugins(packageJson, false),
+      }
+    })
 }
 
 export default buildAllPackages()

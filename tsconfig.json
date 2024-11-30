@@ -1,20 +1,20 @@
 {
   "compilerOptions": {
     "target": "es2018",
-    "jsx": "preserve",
     "lib": ["esnext", "DOM"],
     "module": "esnext",
     "moduleResolution": "Bundler",
     "paths": {
+      "wowfy": ["./packages/wowfy/src/index.ts"],
       "@wowfy/core": ["./packages/core/src/index.ts"],
       "@wowfy/effects": ["./packages/effects/src/index.ts"]
     },
     "resolveJsonModule": true,
     "strict": true,
     "strictNullChecks": true,
-    "outDir": "type",
     "esModuleInterop": true,
     "skipDefaultLibCheck": true,
     "skipLibCheck": true
-  }
+  },
+  "exclude": ["example/**/*"]
 }
