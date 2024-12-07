@@ -1,3 +1,17 @@
+export type WritableCSSStyleDeclaration = {
+  -readonly [K in keyof CSSStyleDeclaration]: CSSStyleDeclaration[K];
+}
+
+export type FilteredCSSStyleDeclaration = {
+  [K in keyof WritableCSSStyleDeclaration as WritableCSSStyleDeclaration[K] extends string ? K : never]: string
+}
+
+export type CSSStyles = Record<Exclude<keyof FilteredCSSStyleDeclaration, number>, string>
+
+type MouseEventMap = {
+  [K in keyof GlobalEventHandlersEventMap as GlobalEventHandlersEventMap[K] extends MouseEvent ? K : never]: MouseEvent
+}
+
 export type RippleMode = 'keep' | 'unkeep'
 
 export type RipplePosition =
@@ -33,7 +47,7 @@ export type RipplePosition =
   | 'rb'
 
 export interface RippleOptions {
-  event: string
+  event: keyof MouseEventMap
   background: string
   duration: string
   timingFunction: string
