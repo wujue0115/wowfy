@@ -1,6 +1,6 @@
-import type { AnyFunction, State, StateKey } from '../../types'
+import type { AnyFunction, StateInstance, StateKey } from '../../types'
 
-export function createStateManager(): State {
+export function createStateManager(): StateInstance {
   const stateMap = new Map<StateKey, boolean>()
   const stateEventMap = new Map<StateKey, {
     on?: AnyFunction
@@ -27,13 +27,13 @@ export function createStateManager(): State {
     if (Array.isArray(key)) {
       key.forEach((k, i) => {
         const newValue = Array.isArray(value) ? value[i] : value
-        trigger(k, newValue)
         stateMap.set(k, newValue)
+        trigger(k, newValue)
       })
     } else {
       const newValue = Array.isArray(value) ? value[0] : value
-      trigger(key, newValue)
       stateMap.set(key, newValue)
+      trigger(key, newValue)
     }
   }
 

@@ -1,6 +1,6 @@
 export type StateKey = string | number | symbol
 
-export interface State {
+export interface StateInstance {
   get: () => StateKey[]
   set: (key: StateKey | StateKey[], value?: boolean | boolean[]) => void
   add: (key: StateKey | StateKey[]) => void
@@ -11,15 +11,15 @@ export interface State {
   off: (key: StateKey, handlerType: 'on' | 'un') => void
 }
 
-export type StateManager = () => State
+export type StateManager = () => StateInstance
 
-export interface Event {
+export interface EventInstance {
   on: (key: string, handler: AnyFunction) => void
   off: (key: string, handler: AnyFunction) => void
   emit: (key: string, ...args: any) => void
 }
 
-export type EventManager = () => Event
+export type EventManager = () => EventInstance
 
 export type BaseElements = string | HTMLElement | HTMLElement[] | NodeList | HTMLCollection
 
@@ -36,7 +36,7 @@ export interface AnyEffect extends BaseEffect {
 }
 
 export interface BaseContext<Options> {
-  els: HTMLElement[] | Node[]
+  els: HTMLElement[]
   options?: Options
 }
 
@@ -44,9 +44,9 @@ export interface AnyContext<Options> extends BaseContext<Options> {
   [key: string]: any
 }
 
-export interface CoreContext<Options > extends BaseContext<Options> {
-  state: State
-  event: Event
+export interface CoreContext<Options> extends BaseContext<Options> {
+  state: StateInstance
+  event: EventInstance
 }
 
 export type ContextCreator<Context, Options> = (el: BaseElements, options?: Options) => Context

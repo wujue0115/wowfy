@@ -5,12 +5,12 @@ import type {
 } from '../types'
 import { createEventManager, createStateManager } from '../managers'
 
-function resolveElements(el: BaseElements): HTMLElement[] | Node[] {
+function resolveElements(el: BaseElements): HTMLElement[] {
   if (typeof el === 'string') {
-    return resolveElements(document.querySelectorAll(el))
+    return resolveElements(document.querySelectorAll<HTMLElement>(el))
   }
   if (el instanceof NodeList || el instanceof HTMLCollection) {
-    return Array.from(el)
+    return Array.from(el).filter(node => node instanceof HTMLElement)
   }
   return ([] as HTMLElement[]).concat(el)
 }
