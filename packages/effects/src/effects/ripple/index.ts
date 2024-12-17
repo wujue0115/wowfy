@@ -1,25 +1,61 @@
-import type { BaseEffect, CoreContext, EventInstance, StateInstance } from '@wowfy/core'
-import type { RippleOptions, RipplePosition } from '../../types'
-import { addStyles, createElement, isValidTimeFormat, parseDuration, sleep, throttle } from '../../utils'
+import type { CoreContext, EventInstance, StateInstance } from '@wowfy/core'
+import type { RippleEffect, RippleOptions, RipplePosition } from '../../types'
+import { addStyles, createElement, parseDuration, sleep, sleepFrame, throttle, validateCSSTime, validateRange } from '../../utils'
 
-function validOptions(options: RippleOptions) {
-  type ValidKey = (keyof Pick<RippleOptions, 'duration' | 'delay' | 'repeatInterval'>)
-  const times: ValidKey[] = ['duration', 'delay', 'repeatInterval']
-  for (const time of times) {
-    if (!isValidTimeFormat(options[time])) {
-      return {
-        isValid: false,
-        message: `"${options[time]}" is an invalid time format.`,
+function validateOptions(options: RippleOptions) {
+  interface Validator {
+    keys: (keyof RippleOptions)[]
+    validate: (value: any) => boolean
+    getMessage: (value: any) => string
+  }
+  const validators: Validator[] = [
+    {
+      keys: ['duration', 'delay', 'repeatInterval'],
+      validate: validateCSSTime,
+      getMessage: v => `"${v}" is an invalid time format.`,
+    },
+    {
+      keys: ['duration'],
+      validate: v => validateRange(parseDuration(v), { min: 0 }),
+      getMessage: v => `"${v}" needs to be greater than 0s.`,
+    },
+    {
+      keys: ['size'],
+      validate: v => v ? validateRange(v, { min: 1, max: 2000 }) : true,
+      getMessage: k => `"${k}" needs to be greater than 0 and less than or equal to 2000.`,
+    },
+    {
+      keys: ['sizeRatio'],
+      validate: v => validateRange(v, { min: 0, max: 1 }),
+      getMessage: k => `"${k}" needs to be greater than 0 and less than or equal to 1.`,
+    },
+    {
+      keys: ['maxCount'],
+      validate: v => validateRange(v, { min: 1, max: 20 }),
+      getMessage: k => `"${k}" needs to be greater than 0 and less than or equal to 20.`,
+    },
+    {
+      keys: ['repeatCount'],
+      validate: v => validateRange(v, { min: 1, max: 4 }),
+      getMessage: k => `"${k}" needs to be greater than 0 and less than or equal to 4.`,
+    },
+  ]
+
+  for (const { keys, validate, getMessage } of validators) {
+    for (const key of keys) {
+      if (!validate(options[key])) {
+        return { isValid: false, message: getMessage(key) }
       }
     }
   }
+
   return { isValid: true }
 }
 
 function resolveOptions(options?: Partial<RippleOptions>): RippleOptions {
   const defaulRippleOptions: RippleOptions = {
     event: 'mousedown',
-    background: '#ff98cfaa',
+    background: '#ff99ccaa',
     duration: '500ms',
     timingFunction: 'ease-in',
     mode: 'unkeep',
@@ -35,7 +71,7 @@ function resolveOptions(options?: Partial<RippleOptions>): RippleOptions {
   }
 
   const resultOptions = { ...defaulRippleOptions, ...options }
-  const { isValid, message } = validOptions(resultOptions)
+  const { isValid, message } = validateOptions(resultOptions)
   if (!isValid) throw new Error(message)
   return resultOptions
 }
@@ -56,10 +92,6 @@ class Ripple {
   static readonly rippleSizeThreshold = 2000
   // This property is used to limit the time threshold of ripple triggering.
   static readonly rippleTimeThreshold = 50
-  // This property is used to limit the number of ripples.
-  static readonly rippleCountThreshold = 20
-  // This property is used to limit the number of ripple repeat.
-  static readonly rippleRepeatCountThreshold = 5
 
   private el: HTMLElement
   private options: RippleOptions
@@ -82,8 +114,27 @@ class Ripple {
       position: this.el.style.position || 'relative',
     })
 
-    this.isListening
-    && this.el.removeEventListener(
+    this.mountListener()
+  }
+
+  update(options: RippleOptions) {
+    this.options = options
+    this.mountListener()
+  }
+
+  destroy() {
+    this.rippleInstances.forEach(r => r.remove())
+    this.rippleInstances = []
+    this.rippleWrapper?.remove()
+    this.isListening && this.el.removeEventListener(
+      this.options.event,
+      this.triggerEffect,
+    )
+    this.isListening = false
+  }
+
+  private mountListener() {
+    this.isListening && this.el.removeEventListener(
       this.options.event,
       this.triggerEffect,
     )
@@ -95,48 +146,48 @@ class Ripple {
     this.isListening = true
   }
 
-  destroy() {
-
-  }
-
   private triggerEffect = throttle((event: MouseEvent) => {
-    let repeatCount = Math.min(
-      Math.max(1, this.options.repeatCount),
-      Ripple.rippleRepeatCountThreshold,
-    )
+    let repeatCount = this.options.repeatCount
     this.addRippleEffect(event)
 
-    if (repeatCount === 1) return
+    if (repeatCount === 0) return
 
     const interval = setInterval(() => {
       if (--repeatCount === 0) {
         clearInterval(interval)
         return
       }
+
       this.addRippleEffect(event)
     }, parseDuration(this.options.repeatInterval))
   }, Ripple.rippleTimeThreshold)
 
-  private addRippleEffect(event: MouseEvent) {
-    // Remove the first ripple when the number of ripples exceeds the threshold.
-    const maxCount = Math.min(
-      Math.max(1, this.options.maxCount),
-      Ripple.rippleCountThreshold,
-    )
-    while (this.rippleInstances.length >= maxCount) {
-      (this.rippleInstances.shift() as HTMLElement).remove()
+  private async addRippleEffect(event: MouseEvent) {
+    const checkRippleCount = () => {
+      // Remove the first ripple when the number of ripples exceeds the threshold.
+      if (this.rippleInstances.length < this.options.maxCount) return
+
+      let removeCount = this.rippleInstances.length - this.options.maxCount
+      this.rippleInstances = this.rippleInstances.filter((r) => {
+        if (removeCount-- <= 0) return true
+        r.remove()
+        return false
+      })
     }
 
-    const { x, y } = this.getRipplePosition(event)
-    const rippleSize = this.options.size || this.caculateRippleSize(x, y)
-    const ripple = this.createRipple(rippleSize, x, y)
-    const rippleIndex = this.rippleInstances.length
-    this.rippleInstances.push(ripple)
-    this.rippleWrapper!.appendChild(ripple)
+    const startRipple = () => {
+      const { x, y } = this.getRipplePosition(event)
+      const rippleSize = this.options.size || this.caculateRippleSize(x, y)
+      const ripple = this.createRipple(rippleSize, x, y)
+      const rippleIndex = this.rippleInstances.length
+      this.rippleInstances.push(ripple)
+      this.rippleWrapper!.appendChild(ripple)
+      this.startRippleAnimation(ripple)
 
-    this.startRippleAnimation(ripple)
+      return { ripple, rippleIndex }
+    }
 
-    const endRipple = async () => {
+    const endRipple = async (ripple: HTMLElement, rippleIndex: number) => {
       this.endRippleAnimation(ripple)
 
       const removeRipple = () => {
@@ -162,16 +213,17 @@ class Ripple {
       removeRipple()
     }
 
+    checkRippleCount()
+    const { ripple, rippleIndex } = startRipple()
     /**
      * Only use requestAnimationFrame to add ripple animation,
      * because if you use setTimeout and the time interval is too short(e.g., <16ms),
      * the startRippleAnimation and endRippleAnimation may trigger in the same frame,
      * causing the animation not to play.
      */
-    requestAnimationFrame(async () => {
-      await sleep(parseDuration(this.options.delay))
-      endRipple()
-    })
+    await sleepFrame()
+    await sleep(parseDuration(this.options.delay))
+    endRipple(ripple, rippleIndex)
   }
 
   private createWrapper() {
@@ -282,14 +334,18 @@ class Ripple {
     let offsetTop = 0
     let offsetLeft = 0
 
-    const isPositioned = (element: HTMLElement | null) =>
-      element && window.getComputedStyle(element).getPropertyValue('position') !== 'static'
-
-    while (targetElement && targetElement !== this.el) {
+    while (targetElement !== this.el) {
       offsetTop += targetElement.offsetTop
       offsetLeft += targetElement.offsetLeft
-      while (targetElement !== this.el && targetElement.parentElement && !isPositioned(targetElement)) {
-        targetElement = targetElement.parentElement
+      while (targetElement !== this.el) {
+        targetElement = targetElement.parentElement!
+        if (
+          window
+            .getComputedStyle(targetElement)
+            .getPropertyValue('position') !== 'static'
+        ) {
+          break
+        }
       }
     }
 
@@ -314,7 +370,7 @@ class Ripple {
   }
 }
 
-export function createRippleController(context: CoreContext<Partial<RippleOptions>>): BaseEffect {
+export function createRippleController(context: CoreContext<Partial<RippleOptions>>): RippleEffect {
   const rippleCollection: Ripple[] = Array.from({ length: context.els.length })
 
   return {
@@ -329,6 +385,12 @@ export function createRippleController(context: CoreContext<Partial<RippleOption
         r.mount()
       })
       context.state.set('mount')
+    },
+    update(options) {
+      context.options = resolveOptions({ ...context.options, ...options })
+      rippleCollection.forEach((r) => {
+        r.update(context.options as RippleOptions)
+      })
     },
     destroy() {
       rippleCollection.forEach((r) => {

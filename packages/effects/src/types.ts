@@ -1,3 +1,5 @@
+import type { BaseEffect } from '@wowfy/core'
+
 export type WritableCSSStyleDeclaration = {
   -readonly [K in keyof CSSStyleDeclaration]: CSSStyleDeclaration[K];
 }
@@ -61,4 +63,8 @@ export interface RippleOptions {
   maxCount: number
   outline: string
   boxShadow: string
+}
+
+export interface RippleEffect extends BaseEffect {
+  update: (options: Partial<RippleOptions>) => void
 }
