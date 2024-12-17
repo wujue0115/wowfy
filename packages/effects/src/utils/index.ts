@@ -1,11 +1,6 @@
 import type { AnyFunction } from '@wowfy/core'
 import type { CSSStyles } from '../types'
 
-export function isValidTimeFormat(input: string): boolean {
-  const regex = /^(?:\d+(?:\.\d+)?|\.?\d+)(?:ms|s)$/
-  return regex.test(input)
-}
-
 export function parseDuration(duration: string) {
   const time = Number.parseFloat(duration.split('m')[0].split('s')[0])
   const millisecond = time * (duration.includes('m') ? 1 : 1000)
@@ -18,7 +13,7 @@ export function addStyles(
 ) {
   for (const [property, value] of Object.entries(styles)) {
     if (property in element.style) {
-      element.style.setProperty(property, value)
+      element.style[property as keyof CSSStyles] = value
     }
   }
 }
@@ -56,4 +51,17 @@ export function sleep(ms: number) {
     while (Date.now() < end);
     resolve()
   })
+}
+
+export function sleepFrame() {
+  return new Promise(resolve => requestAnimationFrame(resolve))
+}
+
+export function validateCSSTime(value: string): boolean {
+  const regex = /^(?:\d+(?:\.\d+)?|\.?\d+)(?:ms|s)$/
+  return regex.test(value)
+}
+
+export function validateRange(value: number, { min, max }: { min?: number, max?: number }): boolean {
+  return value >= (min ?? -Infinity) && value <= (max ?? Infinity)
 }
