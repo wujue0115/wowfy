@@ -2,42 +2,60 @@ import type { CoreContext, EventInstance, StateInstance } from '@wowfy/core'
 import type { RippleEffect, RippleOptions, RipplePosition } from '../../types'
 import { addStyles, createElement, parseDuration, sleep, sleepFrame, throttle, validateCSSTime, validateRange } from '../../utils'
 
+const defaultRippleOptions: RippleOptions = {
+  event: 'mousedown',
+  background: '#ff99ccaa',
+  duration: '500ms',
+  timingFunction: 'ease-in',
+  mode: 'unkeep',
+  position: 'cs',
+  delay: '0ms',
+  size: false,
+  sizeRatio: 1,
+  repeatCount: 1,
+  repeatInterval: '0ms',
+  maxCount: 10,
+  outline: '',
+  boxShadow: '',
+}
+
 function validateOptions(options: RippleOptions) {
   interface Validator {
     keys: (keyof RippleOptions)[]
     validate: (value: any) => boolean
     getMessage: (value: any) => string
   }
+  const getRangeInvalidMessage = (k: string, min: number, max: number) => `"${k}" needs to be greater than ${min} and less than or equal to ${max}.`
   const validators: Validator[] = [
     {
       keys: ['duration', 'delay', 'repeatInterval'],
       validate: validateCSSTime,
-      getMessage: v => `"${v}" is an invalid time format.`,
+      getMessage: k => `"${k}" is an invalid time format.`,
     },
     {
       keys: ['duration'],
       validate: v => validateRange(parseDuration(v), { min: 0 }),
-      getMessage: v => `"${v}" needs to be greater than 0s.`,
+      getMessage: k => `"${k}" needs to be greater than 0s.`,
     },
     {
       keys: ['size'],
       validate: v => v ? validateRange(v, { min: 1, max: 2000 }) : true,
-      getMessage: k => `"${k}" needs to be greater than 0 and less than or equal to 2000.`,
+      getMessage: k => getRangeInvalidMessage(k, 1, 2000),
     },
     {
       keys: ['sizeRatio'],
       validate: v => validateRange(v, { min: 0, max: 1 }),
-      getMessage: k => `"${k}" needs to be greater than 0 and less than or equal to 1.`,
+      getMessage: k => getRangeInvalidMessage(k, 0, 1),
     },
     {
       keys: ['maxCount'],
       validate: v => validateRange(v, { min: 1, max: 20 }),
-      getMessage: k => `"${k}" needs to be greater than 0 and less than or equal to 20.`,
+      getMessage: k => getRangeInvalidMessage(k, 1, 20),
     },
     {
       keys: ['repeatCount'],
       validate: v => validateRange(v, { min: 1, max: 4 }),
-      getMessage: k => `"${k}" needs to be greater than 0 and less than or equal to 4.`,
+      getMessage: k => getRangeInvalidMessage(k, 1, 4),
     },
   ]
 
@@ -53,24 +71,7 @@ function validateOptions(options: RippleOptions) {
 }
 
 function resolveOptions(options?: Partial<RippleOptions>): RippleOptions {
-  const defaulRippleOptions: RippleOptions = {
-    event: 'mousedown',
-    background: '#ff99ccaa',
-    duration: '500ms',
-    timingFunction: 'ease-in',
-    mode: 'unkeep',
-    position: 'cs',
-    delay: '0ms',
-    size: false,
-    sizeRatio: 1,
-    repeatCount: 1,
-    repeatInterval: '0ms',
-    maxCount: 10,
-    outline: '',
-    boxShadow: '',
-  }
-
-  const resultOptions = { ...defaulRippleOptions, ...options }
+  const resultOptions = { ...defaultRippleOptions, ...options }
   const { isValid, message } = validateOptions(resultOptions)
   if (!isValid) throw new Error(message)
   return resultOptions
@@ -98,6 +99,7 @@ class Ripple {
   private rippleWrapper?: HTMLElement
   private rippleInstances: HTMLElement[] = []
   private isListening = false
+  private isRemoveRipple = false
 
   constructor(el: HTMLElement, context: CoreContext<RippleOptions>) {
     this.el = el
@@ -147,6 +149,8 @@ class Ripple {
   }
 
   private triggerEffect = throttle((event: MouseEvent) => {
+    if (this.isRemoveRipple) return
+
     let repeatCount = this.options.repeatCount
     this.addRippleEffect(event)
 
@@ -167,7 +171,7 @@ class Ripple {
       // Remove the first ripple when the number of ripples exceeds the threshold.
       if (this.rippleInstances.length < this.options.maxCount) return
 
-      let removeCount = this.rippleInstances.length - this.options.maxCount
+      let removeCount = this.options.maxCount - this.rippleInstances.length + 1
       this.rippleInstances = this.rippleInstances.filter((r) => {
         if (removeCount-- <= 0) return true
         r.remove()
@@ -191,6 +195,8 @@ class Ripple {
       this.endRippleAnimation(ripple)
 
       const removeRipple = () => {
+        const isRemoved = !ripple.parentElement
+        if (isRemoved) return
         ripple.remove()
         this.rippleInstances.splice(rippleIndex, 1)
       }
@@ -213,6 +219,7 @@ class Ripple {
       removeRipple()
     }
 
+    this.isRemoveRipple = true
     checkRippleCount()
     const { ripple, rippleIndex } = startRipple()
     /**
@@ -222,6 +229,7 @@ class Ripple {
      * causing the animation not to play.
      */
     await sleepFrame()
+    this.isRemoveRipple = false
     await sleep(parseDuration(this.options.delay))
     endRipple(ripple, rippleIndex)
   }
