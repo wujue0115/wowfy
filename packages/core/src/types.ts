@@ -54,3 +54,12 @@ export type ContextCreator<Context, Options> = (el: BaseElements, options?: Opti
 export type EffectController<Effect extends BaseEffect, Context> = (context: Context) => Effect
 
 export type AnyFunction = (...args: any) => any
+
+export type BaseEffectCreator<Effect extends BaseEffect, Options extends BaseOptions> = (el: BaseElements, options?: Options) => Effect
+
+export interface WowfyInitialOptions<Effect extends BaseEffect, Options extends BaseOptions, EffectCreator extends BaseEffectCreator<Effect, Options>> {
+  prefix?: string
+  effectName: string
+  defaultOptions: Options
+  effectCreator: EffectCreator
+}

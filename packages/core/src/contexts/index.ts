@@ -5,7 +5,7 @@ import type {
 } from '../types'
 import { createEventManager, createStateManager } from '../managers'
 
-function resolveElements(el: BaseElements): HTMLElement[] {
+export function resolveElements(el: BaseElements): HTMLElement[] {
   if (typeof el === 'string') {
     return resolveElements(document.querySelectorAll<HTMLElement>(el))
   }

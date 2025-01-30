@@ -2,7 +2,7 @@ import type { CoreContext, EventInstance, StateInstance } from '@wowfy/core'
 import type { RippleEffect, RippleOptions, RipplePosition } from '../../types'
 import { addStyles, createElement, parseDuration, sleep, sleepFrame, throttle, validateCSSTime, validateRange } from '../../utils'
 
-const defaultRippleOptions: RippleOptions = {
+export const defaultRippleOptions: RippleOptions = {
   event: 'mousedown',
   background: '#ff99ccaa',
   duration: '500ms',
@@ -23,14 +23,14 @@ function validateOptions(options: RippleOptions) {
   interface Validator {
     keys: (keyof RippleOptions)[]
     validate: (value: any) => boolean
-    getMessage: (value: any) => string
+    getMessage: (key: any, value: any) => string
   }
   const getRangeInvalidMessage = (k: string, min: number, max: number) => `"${k}" needs to be greater than ${min} and less than or equal to ${max}.`
   const validators: Validator[] = [
     {
       keys: ['duration', 'delay', 'repeatInterval'],
       validate: validateCSSTime,
-      getMessage: k => `"${k}" is an invalid time format.`,
+      getMessage: (k, v) => `"${v}" is an invalid time format in the '${k}' option.`,
     },
     {
       keys: ['duration'],
@@ -62,7 +62,7 @@ function validateOptions(options: RippleOptions) {
   for (const { keys, validate, getMessage } of validators) {
     for (const key of keys) {
       if (!validate(options[key])) {
-        return { isValid: false, message: getMessage(key) }
+        return { isValid: false, message: getMessage(key, options[key]) }
       }
     }
   }
