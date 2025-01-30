@@ -79,7 +79,7 @@ function resolveOptions(options?: Partial<RippleOptions>): RippleOptions {
 
 function initManagers(managers: { state: StateInstance, event: EventInstance }) {
   const { state, event } = managers
-  const status = ['create', 'mount', 'destroy']
+  const status = ['create', 'mount', 'update', 'destroy']
   status.forEach((s) => {
     state.add(s)
     state.on(s, () => {
@@ -399,6 +399,7 @@ export function createRippleController(context: CoreContext<Partial<RippleOption
       rippleCollection.forEach((r) => {
         r.update(context.options as RippleOptions)
       })
+      context.state.set('update')
     },
     destroy() {
       rippleCollection.forEach((r) => {
