@@ -34,7 +34,7 @@ export function createWowfyInitializer<
 >(
   initialOptions: WowfyInitialOptions<Effect, Options, EffectCreator>,
 ) {
-  return (customDefaultOptions: Partial<{ prefix: string } & Options> = {}) => {
+  return (customDefaultOptions: Partial<{ prefix: string } & Options> = {}): { destroy: () => void } => {
     const { prefix = customDefaultOptions?.prefix ?? 'w', effectName, effectCreator, defaultOptions } = initialOptions
 
     const camelToKebab = (str: string) => str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
@@ -56,9 +56,16 @@ export function createWowfyInitializer<
     }
 
     const els = resolveElements(`[${prefix}-${effectName}]`)
-    els.forEach((el) => {
+    const effects = els.map((el) => {
       const effect = effectCreator(el, resolveOptions(el) as Options)
       effect.mount()
+      return effect
     })
+
+    return {
+      destroy: () => {
+        effects.forEach(effect => effect.destroy())
+      },
+    }
   }
 }

@@ -4,7 +4,7 @@ import type { RippleEffect, RippleOptions } from '@wowfy/effects'
 import { createRippleController, defaultRippleOptions } from '@wowfy/effects'
 
 const createRipple = createWowfy<RippleEffect, Partial<RippleOptions>>(createRippleController)
-const rippleInit = createWowfyInitializer<RippleEffect, RippleOptions, typeof createRipple>({
+const initRipple = createWowfyInitializer<RippleEffect, RippleOptions, typeof createRipple>({
   effectName: 'ripple',
   defaultOptions: defaultRippleOptions,
   effectCreator: createRipple,
@@ -12,4 +12,4 @@ const rippleInit = createWowfyInitializer<RippleEffect, RippleOptions, typeof cr
 
 export * from '@wowfy/core'
 export * from '@wowfy/effects'
-export { createRipple, rippleInit }
+export { createRipple, initRipple }
