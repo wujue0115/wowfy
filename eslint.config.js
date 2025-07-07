@@ -4,7 +4,7 @@ export default antfu(
   {
     ignores: [
       '**/*.md',
-      'examples/**/*'
+      'examples/**/*',
     ],
   },
   {
