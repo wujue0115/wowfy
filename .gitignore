@@ -3,7 +3,6 @@ dist/
 types/
 
 # Misc
-.vscode
 .DS_Store
 
 # vitepress build output
