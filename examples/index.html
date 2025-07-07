@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wowfy example</title>
+    <!-- <script type="importmap">
+      {
+        "imports": {
+          "wowfy": "../dist/wowfy.esm.js"
+        }
+      }
+    </script> -->
+    <script src="../dist/wowfy.global.js"></script>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -o-user-select: none;
+      }
+
+      html,
+      body {
+        height: 100%;
+        background: #181825;
+      }
+
+      body {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-evenly;
+        align-items: center;
+      }
+
+      .btn {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 30%;
+        min-width: 300px;
+        aspect-ratio: 1;
+        border-radius: 10px;
+        box-shadow: 0 0 3px #fff;
+        background: #fff3;
+        color: #fff;
+        text-shadow: 0 0 3px #fff;
+        font-size: 1.25rem;
+        font-weight: bold;
+        letter-spacing: 0.25em;
+        transition: 0.3s;
+        cursor: pointer;
+
+        &:hover {
+          scale: 1.02;
+        }
+
+        &:active {
+          scale: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="btn"
+      w-ripple
+      w-event="mousedown"
+      w-duration="700ms"
+      w-position="cursor"
+    >
+      <span class="btn-content">Wowfy</span>
+    </div>
+
+    <div class="btn btn2">
+      <span class="btn-content">Wowfy</span>
+    </div>
+
+    <script>
+      const btn2 = document.querySelector(".btn2");
+      const wowBtn = new Wowfy(btn2, "ripple", {
+        event: "mousemove",
+        duration: "500ms",
+        background: "#f00a",
+        position: "cs",
+        sizeRatio: 0.2
+      });
+
+      const wowfyUpdate = () => {
+        const r = 150 + Math.floor(Math.random() * 106);
+        const g = 150 + Math.floor(Math.random() * 106);
+        const b = 150 + Math.floor(Math.random() * 106);
+        const alpha = 0.8;
+
+        wowBtn.update("ripple", {
+          background: `rgba(${r}, ${g}, ${b}, ${alpha})`
+        });
+        window.requestAnimationFrame(wowfyUpdate);
+      };
+
+      wowfyUpdate();
+    </script>
+
+    <!-- <script type="module">
+      import { Wowfy, wowfyInit } from "../dist/wowfy.esm.js";
+      // import { Wowfy, wowfyInit } from "wowfy";
+
+      wowfyInit();
+
+      const btn2 = document.querySelector(".btn2");
+      const wowBtn = new Wowfy(btn2, "ripple", {
+        event: "mousemove",
+        duration: "3s",
+        background: "#f00a",
+        position: "cs"
+      });
+
+      const wowfyUpdate = () => {
+        const r = 150 + Math.floor(Math.random() * 106);
+        const g = 150 + Math.floor(Math.random() * 106);
+        const b = 150 + Math.floor(Math.random() * 106);
+        const alpha = 0.6;
+
+        wowBtn.update("ripple", {
+          background: `rgba(${r}, ${g}, ${b}, ${alpha})`
+        });
+        window.requestAnimationFrame(wowfyUpdate);
+      };
+
+      wowfyUpdate();
+    </script> -->
+  </body>
+</html>

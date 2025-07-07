@@ -16,5 +16,5 @@
     "skipDefaultLibCheck": true,
     "skipLibCheck": true
   },
-  "exclude": ["example/**/*"]
+  "exclude": ["examples/**/*"]
 }

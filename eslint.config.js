@@ -4,6 +4,7 @@ export default antfu(
   {
     ignores: [
       '**/*.md',
+      'examples/**/*'
     ],
   },
   {
@@ -12,6 +13,7 @@ export default antfu(
       'style/brace-style': ['error', '1tbs'],
       'style/nonblock-statement-body-position': ['error', 'beside', { overrides: {} }],
       'antfu/if-newline': 'off',
+      'no-console': 'off',
     },
   },
 )

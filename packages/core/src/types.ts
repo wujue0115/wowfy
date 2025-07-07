@@ -31,6 +31,10 @@ export interface BaseEffect {
   destroy: () => void
 }
 
+export interface CoreEffect<Options extends BaseOptions> extends BaseEffect {
+  update: (options: Partial<Options>) => void
+}
+
 export interface AnyEffect extends BaseEffect {
   [key: string]: (...args: any) => any
 }

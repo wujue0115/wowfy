@@ -1,4 +1,4 @@
-import type { BaseEffect } from '@wowfy/core'
+import type { CoreEffect } from '@wowfy/core'
 
 export type WritableCSSStyleDeclaration = {
   -readonly [K in keyof CSSStyleDeclaration]: CSSStyleDeclaration[K];
@@ -65,6 +65,19 @@ export interface RippleOptions {
   boxShadow: string
 }
 
-export interface RippleEffect extends BaseEffect {
-  update: (options: Partial<RippleOptions>) => void
+export type RippleEffect = CoreEffect<RippleOptions>
+
+export interface StringArtOptions {
+  duration: string
+  delay: string
+  size: number | false
+  image: File | Blob | string
+  points: number
+  lines: number
+  lineColor: string
+  lineWidth: number
+}
+
+export interface StringArtEffect extends CoreEffect<StringArtOptions> {
+  start: () => Promise<void>
 }

@@ -40,11 +40,15 @@ export function throttle(handler: AnyFunction, delay: number) {
   }
 }
 
-export function sleep(ms: number) {
-  if (setTimeout) {
-    return new Promise(resolve => setTimeout(resolve, ms))
-  }
+export function sleepFrame() {
+  return new Promise(resolve => requestAnimationFrame(resolve))
+}
 
+export function sleepTimeout(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+export function sleepBusyWait(ms: number) {
   return new Promise<void>((resolve) => {
     const start = Date.now()
     const end = start + ms
@@ -53,8 +57,19 @@ export function sleep(ms: number) {
   })
 }
 
-export function sleepFrame() {
-  return new Promise(resolve => requestAnimationFrame(resolve))
+export function sleep(ms: number | string) {
+  if (ms === 'frame') return sleepFrame()
+
+  if (typeof ms === 'string') {
+    if (!validateCSSTime(ms)) {
+      throw new Error(`Invalid CSS time: ${ms}`)
+    }
+    ms = parseDuration(ms)
+  }
+
+  if (typeof setTimeout === 'function') return sleepTimeout(ms)
+
+  return sleepBusyWait(ms)
 }
 
 export function validateCSSTime(value: string): boolean {
@@ -64,4 +79,8 @@ export function validateCSSTime(value: string): boolean {
 
 export function validateRange(value: number, { min, max }: { min?: number, max?: number }): boolean {
   return value >= (min ?? -Infinity) && value <= (max ?? Infinity)
+}
+
+export function pipe(...fns: AnyFunction[]) {
+  return (x: any) => fns.reduce(async (y, fn) => fn(await y), x)
 }

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="../packages/wowfy/dist/index.global.js"></script>
+  </head>
+  <body>
+    <script type="module">
+      import { Ripple } from "wowfy/effects"
+      import Wowfy from "wowfy";
+
+      // 1. Register effect
+
+      Wowfy.registerEffect(Ripple);
+      Wowfy.registerEffect([Ripple, ScanLine]);
+
+      // Wowfy.use(Ripple);
+      // Wowfy.use('scanLine', ScanLine);
+      // Wowfy.use([Ripple, ScanLine]);
+      // Wowfy.use([
+      //   {
+      //     name: 'ripple',
+      //     effect: Ripple,
+      //   },
+      //   {
+      //     name: 'scanLine',
+      //     effect: ScanLine,
+      //   },
+      // ]);
+
+      // const wowfy1 = new Wowfy(el, 'ripple', {});
+
+      // 2. class params
+      // const ripple = new Ripple({
+      //   color: 'red',
+      //   duration: 1000,
+      // });
+      // const wowfy2 = new Wowfy(el, ripple, {})
+
+      const ripple = new Wowfy(el, 'ripple', {
+        color: 'red',
+        duration: 1000,
+      });
+    </script>
+  </body>
+</html>

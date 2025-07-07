@@ -4,6 +4,7 @@ import type {
   CoreContext,
 } from '../types'
 import { createEventManager, createStateManager } from '../managers'
+import { logger } from '../logger'
 
 export function resolveElements(el: BaseElements): HTMLElement[] {
   if (typeof el === 'string') {
@@ -16,8 +17,12 @@ export function resolveElements(el: BaseElements): HTMLElement[] {
 }
 
 export function createBaseContext<Options>(el: BaseElements, options?: Options): BaseContext<Options> {
+  const els = resolveElements(el)
+
+  !els.length && logger.warn('No elements found. Please check the selector or create the effect when the dom is ready.')
+
   return {
-    els: resolveElements(el),
+    els,
     options,
   }
 }
