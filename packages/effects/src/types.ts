@@ -67,6 +67,8 @@ export interface RippleOptions {
 
 export type RippleEffect = CoreEffect<RippleOptions>
 
+export type StringArtMode = 'canvas' | 'svg'
+
 export interface StringArtOptions {
   duration: string
   delay: string
@@ -76,6 +78,7 @@ export interface StringArtOptions {
   lines: number
   lineColor: string
   lineWidth: number
+  mode?: StringArtMode
 }
 
 export interface StringArtEffect extends CoreEffect<StringArtOptions> {

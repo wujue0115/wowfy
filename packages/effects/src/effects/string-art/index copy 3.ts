@@ -42,88 +42,36 @@ function getLinePixels(x0: number, y0: number, x1: number, y1: number): Point[] 
   return pixels
 }
 
-function parseLineColorIntensity(lineColor: string): number {
-  // 将颜色字符串转换为灰阶色彩值
-  const colorRegex = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i
-  const rgbaRegex = /^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/
+// function generateGrayscaleImage(imageGrayData: number[][][]) {
+//   const height = imageGrayData.length
+//   if (height === 0) return
+//   const width = imageGrayData[0].length
+//   if (width === 0) return
 
-  if (colorRegex.test(lineColor)) {
-    // 处理十六进制颜色
-    const hex = lineColor.slice(1)
-    let r: number, g: number, b: number
+//   const canvas = document.createElement('canvas')
+//   canvas.width = width
+//   canvas.height = height
+//   const ctx = canvas.getContext('2d')
+//   if (!ctx) return
 
-    if (hex.length === 3) {
-      // #RGB 格式
-      r = Number.parseInt(hex[0] + hex[0], 16)
-      g = Number.parseInt(hex[1] + hex[1], 16)
-      b = Number.parseInt(hex[2] + hex[2], 16)
-    } else if (hex.length === 4) {
-      // #RGBA 格式
-      r = Number.parseInt(hex[0] + hex[0], 16)
-      g = Number.parseInt(hex[1] + hex[1], 16)
-      b = Number.parseInt(hex[2] + hex[2], 16)
-    } else if (hex.length === 6) {
-      // #RRGGBB 格式
-      r = Number.parseInt(hex.slice(0, 2), 16)
-      g = Number.parseInt(hex.slice(2, 4), 16)
-      b = Number.parseInt(hex.slice(4, 6), 16)
-    } else if (hex.length === 8) {
-      // #RRGGBBAA 格式
-      r = Number.parseInt(hex.slice(0, 2), 16)
-      g = Number.parseInt(hex.slice(2, 4), 16)
-      b = Number.parseInt(hex.slice(4, 6), 16)
-    } else {
-      return 20 // 默认值
-    }
+//   const imageData = ctx.createImageData(width, height)
+//   const data = imageData.data
 
-    // 使用加权平均法计算灰度值
-    return 255 - Math.round(r * 0.299 + g * 0.587 + b * 0.114)
-  } else if (rgbaRegex.test(lineColor)) {
-    // 处理 rgba 格式
-    const match = lineColor.match(rgbaRegex)
-    if (match) {
-      const r = Number.parseInt(match[1], 10)
-      const g = Number.parseInt(match[2], 10)
-      const b = Number.parseInt(match[3], 10)
-      // 使用加权平均法计算灰度值
-      return 255 - Math.round(r * 0.299 + g * 0.587 + b * 0.114)
-    }
-  }
+//   for (let y = 0; y < height; y++) {
+//     for (let x = 0; x < width; x++) {
+//       const index = (y * width + x) * 4
+//       // We are reversing the color from `255 - gray` back to `gray` for correct display
+//       const originalGray = 255 - imageGrayData[y][x][0]
+//       data[index] = originalGray // R
+//       data[index + 1] = originalGray // G
+//       data[index + 2] = originalGray // B
+//       data[index + 3] = 255 // A
+//     }
+//   }
 
-  // 默认灰度值
-  return 20
-}
-
-function _generateGrayscaleImage(imageGrayData: number[][][]) {
-  const height = imageGrayData.length
-  if (height === 0) return
-  const width = imageGrayData[0].length
-  if (width === 0) return
-
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
-
-  const imageData = ctx.createImageData(width, height)
-  const data = imageData.data
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const index = (y * width + x) * 4
-      // We are reversing the color from `255 - gray` back to `gray` for correct display
-      const originalGray = 255 - imageGrayData[y][x][0]
-      data[index] = originalGray // R
-      data[index + 1] = originalGray // G
-      data[index + 2] = originalGray // B
-      data[index + 3] = 255 // A
-    }
-  }
-
-  ctx.putImageData(imageData, 0, 0)
-  console.log('Grayscale PNG Data URL:', canvas.toDataURL('image/png'))
-}
+//   ctx.putImageData(imageData, 0, 0)
+//   console.log('Grayscale PNG Data URL:', canvas.toDataURL('image/png'))
+// }
 
 export async function drawStringArt(options: drawStringArtOptions) {
   const { canvas, ctx, dpr, imageGrayData, points, lines, lineColor, lineWidth } = options
@@ -145,15 +93,10 @@ export async function drawStringArt(options: drawStringArtOptions) {
     })
   }
 
-  // Make a deep copy of the image data to avoid modifying the original
-  const mutableGrayData = imageGrayData.map(row => row.map(pixel => [...pixel]))
+  // Make a mutable copy of the image data
+  const mutableGrayData = imageGrayData.map(row => [...row])
   const imgHeight = mutableGrayData.length
   const imgWidth = mutableGrayData[0].length
-
-  // 根據線條顏色計算扣除強度
-  const colorIntensity = parseLineColorIntensity(lineColor) * 0.09
-
-  console.log('Color Intensity:', colorIntensity)
 
   // 設置線條渲染屬性
   ctx.lineWidth = lineWidth
@@ -209,119 +152,14 @@ export async function drawStringArt(options: drawStringArtOptions) {
       const imgY = Math.floor((pixel.y / height) * imgHeight)
 
       if (imgX >= 0 && imgX < imgWidth && imgY >= 0 && imgY < imgHeight) {
-        // Decrease the brightness of the pixels on the line based on line color intensity
-        mutableGrayData[imgY][imgX][0] = Math.max(0, mutableGrayData[imgY][imgX][0] - colorIntensity)
+        // Decrease the brightness of the pixels on the line
+        mutableGrayData[imgY][imgX][0] = Math.max(0, mutableGrayData[imgY][imgX][0] - 20)
       }
     }
 
     currentPinIndex = nextPinIndex
 
-    if (i % 20 === 0) await sleep('frame')
-    if (i % 200 === 0) {
-      console.log('Drawing progress:', Math.round((i / lines) * 100), '%')
-    }
-  }
-}
-
-export interface drawStringSvgOptions {
-  svgElement: SVGElement
-  imageGrayData: number[][][]
-  points: number
-  lines: number
-  lineColor: string
-  lineWidth: number
-  width: number
-  height: number
-}
-
-export async function drawStringSvg(options: drawStringSvgOptions) {
-  const { svgElement, imageGrayData, points, lines, lineColor, lineWidth, width, height } = options
-
-  const center = { x: width / 2, y: height / 2 }
-  const radius = Math.min(width, height) / 2
-
-  // 1. Generate pins
-  const pins: Point[] = []
-  for (let i = 0; i < points; i++) {
-    const angle = (i / points) * 2 * Math.PI
-    pins.push({
-      x: Math.round(center.x + radius * Math.cos(angle)),
-      y: Math.round(center.y + radius * Math.sin(angle)),
-    })
-  }
-
-  // Make a deep copy of the image data to avoid modifying the original
-  const mutableGrayData = imageGrayData.map(row => row.map(pixel => [...pixel]))
-  const imgHeight = mutableGrayData.length
-  const imgWidth = mutableGrayData[0].length
-
-  // 根據線條顏色計算扣除強度
-  const colorIntensity = parseLineColorIntensity(lineColor) * 0.09
-
-  console.log('Color Intensity:', colorIntensity)
-
-  // Create SVG group for all lines
-  const linesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-  linesGroup.setAttribute('stroke', lineColor)
-  linesGroup.setAttribute('stroke-width', lineWidth.toString())
-  linesGroup.setAttribute('stroke-linecap', 'round')
-  linesGroup.setAttribute('stroke-linejoin', 'round')
-  linesGroup.setAttribute('fill', 'none')
-
-  svgElement.appendChild(linesGroup)
-
-  let currentPinIndex = 0
-  let nextPinIndex = 0
-
-  for (let i = 0; i < lines; i++) {
-    let bestScore = -1
-
-    for (let j = 0; j < points; j++) {
-      if (j === currentPinIndex) continue
-
-      const linePixels = getLinePixels(pins[currentPinIndex].x, pins[currentPinIndex].y, pins[j].x, pins[j].y)
-      let currentScore = 0
-
-      for (const pixel of linePixels) {
-        // Map SVG coordinates to image data coordinates
-        const imgX = Math.floor((pixel.x / width) * imgWidth)
-        const imgY = Math.floor((pixel.y / height) * imgHeight)
-
-        if (imgX >= 0 && imgX < imgWidth && imgY >= 0 && imgY < imgHeight) currentScore += mutableGrayData[imgY][imgX][0]
-      }
-
-      if (currentScore > bestScore) {
-        bestScore = currentScore
-        nextPinIndex = j
-      }
-    }
-
-    // Draw the best line using SVG
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line')
-    line.setAttribute('x1', pins[currentPinIndex].x.toString())
-    line.setAttribute('y1', pins[currentPinIndex].y.toString())
-    line.setAttribute('x2', pins[nextPinIndex].x.toString())
-    line.setAttribute('y2', pins[nextPinIndex].y.toString())
-    linesGroup.appendChild(line)
-
-    // Update the grayscale data
-    const drawnLinePixels = getLinePixels(pins[currentPinIndex].x, pins[currentPinIndex].y, pins[nextPinIndex].x, pins[nextPinIndex].y)
-    for (const pixel of drawnLinePixels) {
-      const imgX = Math.floor((pixel.x / width) * imgWidth)
-      const imgY = Math.floor((pixel.y / height) * imgHeight)
-
-      if (imgX >= 0 && imgX < imgWidth && imgY >= 0 && imgY < imgHeight) {
-        // Decrease the brightness of the pixels on the line based on line color intensity
-        mutableGrayData[imgY][imgX][0] = Math.max(0, mutableGrayData[imgY][imgX][0] - colorIntensity)
-      }
-    }
-
-    currentPinIndex = nextPinIndex
-
-    if (i % 20 === 0) await sleep('frame')
-    if (i % 200 === 0) {
-      console.log('Drawing progress:', Math.round((i / lines) * 100), '%')
-    }
+    if (i % 200 === 0) await sleep(100)
   }
 }
 
@@ -335,7 +173,6 @@ export const defaultStringArtOptions: StringArtOptions = {
   lines: 1e4,
   lineColor: '#0001',
   lineWidth: 1,
-  mode: 'canvas',
 }
 
 function validateOptions(options: StringArtOptions) {
@@ -360,11 +197,6 @@ function validateOptions(options: StringArtOptions) {
       keys: ['size'],
       validate: v => v ? validateRange(v, { min: 1, max: 2000 }) : true,
       getMessage: k => getRangeInvalidMessage(k, 1, 2000),
-    },
-    {
-      keys: ['mode'],
-      validate: v => ['canvas', 'svg'].includes(v),
-      getMessage: (k, v) => `"${v}" is not a valid mode. Mode must be either "canvas" or "svg".`,
     },
   ]
 
@@ -458,26 +290,11 @@ function covertToGrayScale(rgb: number[]): number {
   return 255 - grayValue
 }
 
-function getImageData(canvas: HTMLCanvasElement, colorSpace: ColorSpace = 'gray', size?: number): number[][][] {
+function getImageData(canvas: HTMLCanvasElement, colorSpace: ColorSpace = 'gray'): number[][][] {
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Failed to get canvas context')
 
-  let startX = 0
-  let startY = 0
-  let targetWidth = canvas.width
-  let targetHeight = canvas.height
-
-  // 如果指定了 size，則從中間截取 size x size 的正方形區域
-  if (size) {
-    targetWidth = Math.min(size, canvas.width)
-    targetHeight = Math.min(size, canvas.height)
-
-    // 計算起始位置，確保從中間截取
-    startX = Math.floor((canvas.width - targetWidth) / 2)
-    startY = Math.floor((canvas.height - targetHeight) / 2)
-  }
-
-  const imageData = ctx.getImageData(startX, startY, targetWidth, targetHeight)
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   const data = imageData.data
   const width = imageData.width
   const height = imageData.height
@@ -511,7 +328,6 @@ class StringArt {
   private options: StringArtOptions
   private stringArtWrapper?: HTMLElement
   private stringArtCanvas?: HTMLCanvasElement
-  private stringArtSvg?: SVGElement
   private stringArtInstances: HTMLElement[] = []
   private dpr: number = window.devicePixelRatio || 1
   private ctx: CanvasRenderingContext2D | null = null
@@ -528,23 +344,16 @@ class StringArt {
 
     if (!this.stringArtWrapper) {
       this.stringArtWrapper = this.createWrapper()
-
-      if (this.options.mode === 'canvas') {
-        this.stringArtCanvas = this.createCanvas()
-        this.stringArtWrapper.appendChild(this.stringArtCanvas)
-        this.ctx = this.stringArtCanvas.getContext('2d')
-
-        if (this.ctx) {
-          // 設置 Canvas 渲染優化
-          this.ctx.imageSmoothingEnabled = false // 禁用圖像平滑，避免模糊
-          this.ctx.scale(this.dpr, this.dpr)
-        }
-      } else {
-        this.stringArtSvg = this.createSvg()
-        this.stringArtWrapper.appendChild(this.stringArtSvg)
-      }
-
+      this.stringArtCanvas = this.createCanvas()
+      this.stringArtWrapper.appendChild(this.stringArtCanvas)
       this.el.appendChild(this.stringArtWrapper)
+      this.ctx = this.stringArtCanvas.getContext('2d')
+
+      if (this.ctx) {
+        // 設置 Canvas 渲染優化
+        this.ctx.imageSmoothingEnabled = false // 禁用圖像平滑，避免模糊
+        this.ctx.scale(this.dpr, this.dpr)
+      }
     }
   }
 
@@ -556,7 +365,7 @@ class StringArt {
     const imagePipeline = pipe(
       loadImage,
       res => resizeImage(res, 512),
-      res => getImageData(res, 'gray', 512),
+      res => getImageData(res, 'gray'),
     )
     const imageGrayData = await imagePipeline(this.options.image)
 
@@ -564,38 +373,22 @@ class StringArt {
     console.log('Image Gray Width:', imageGrayData[0].length)
     console.log('Image Gray Height:', imageGrayData.length)
 
-    if (this.options.mode === 'canvas') {
-      await drawStringArt({
-        canvas: this.stringArtCanvas!,
-        ctx: this.ctx!,
-        dpr: this.dpr,
-        imageGrayData,
-        points: this.options.points,
-        lines: this.options.lines,
-        lineColor: this.options.lineColor,
-        lineWidth: this.options.lineWidth,
-      })
-    } else {
-      await drawStringSvg({
-        svgElement: this.stringArtSvg!,
-        imageGrayData,
-        points: this.options.points,
-        lines: this.options.lines,
-        lineColor: this.options.lineColor,
-        lineWidth: this.options.lineWidth,
-        width: this.el.clientWidth,
-        height: this.el.clientHeight,
-      })
-    }
+    await drawStringArt({
+      canvas: this.stringArtCanvas!,
+      ctx: this.ctx!,
+      dpr: this.dpr,
+      imageGrayData,
+      points: this.options.points,
+      lines: this.options.lines,
+      lineColor: this.options.lineColor,
+      lineWidth: this.options.lineWidth,
+    })
   }
 
   destroy() {
     this.stringArtInstances.forEach(r => r.remove())
     this.stringArtInstances = []
     this.stringArtWrapper?.remove()
-    this.stringArtCanvas = undefined
-    this.stringArtSvg = undefined
-    this.ctx = null
   }
 
   private createWrapper() {
@@ -625,22 +418,6 @@ class StringArt {
     canvas.height = height
 
     return canvas
-  }
-
-  private createSvg() {
-    const width = this.el.clientWidth
-    const height = this.el.clientHeight
-
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-    svg.setAttribute('width', '100%')
-    svg.setAttribute('height', '100%')
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`)
-    svg.style.position = 'absolute'
-    svg.style.borderRadius = 'inherit'
-    svg.style.pointerEvents = 'none'
-    svg.style.contain = 'strict'
-
-    return svg
   }
 }
 
