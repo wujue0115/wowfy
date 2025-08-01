@@ -78,7 +78,7 @@ export interface StringArtOptions {
   lines: number
   lineColor: string
   lineWidth: number
-  mode?: StringArtMode
+  mode: StringArtMode
 }
 
 export interface StringArtEffect extends CoreEffect<StringArtOptions> {

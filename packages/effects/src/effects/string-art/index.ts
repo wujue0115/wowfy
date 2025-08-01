@@ -2,44 +2,160 @@ import type { CoreContext, EventInstance, StateInstance } from '@wowfy/core'
 import type { StringArtEffect, StringArtOptions } from '../../types'
 import { addStyles, createElement, parseDuration, pipe, sleep, validateCSSTime, validateRange } from '../../utils'
 
-export interface drawStringArtOptions {
-  canvas: HTMLCanvasElement
-  ctx: CanvasRenderingContext2D
-  dpr: number
+export interface Point {
+  x: number
+  y: number
+  coverage?: number // 線條在像素內的覆蓋比率 (0-1)
+}
+
+export interface BaseDrawOptions {
   imageGrayData: number[][][]
   points: number
   lines: number
   lineColor: string
   lineWidth: number
+  width: number
+  height: number
 }
 
-export interface Point {
-  x: number
-  y: number
+export interface CanvasDrawOptions extends BaseDrawOptions {
+  canvas: HTMLCanvasElement
+  ctx: CanvasRenderingContext2D
+  dpr: number
 }
 
+export interface SvgDrawOptions extends BaseDrawOptions {
+  svgElement: SVGElement
+}
+
+export interface StringArtRenderer {
+  setupRenderer: () => void
+  drawLine: (from: Point, to: Point) => void
+  getProgress: () => number
+}
+
+/**
+ * Wu's Line Algorithm - 抗鋸齒線條算法
+ * 計算線段經過的所有像素及其覆蓋率
+ * @param x0 起點 x 座標
+ * @param y0 起點 y 座標
+ * @param x1 終點 x 座標
+ * @param y1 終點 y 座標
+ * @returns 包含像素座標和覆蓋率的點陣列
+ */
 function getLinePixels(x0: number, y0: number, x1: number, y1: number): Point[] {
   const pixels: Point[] = []
-  const dx = Math.abs(x1 - x0)
-  const dy = Math.abs(y1 - y0)
-  const sx = x0 < x1 ? 1 : -1
-  const sy = y0 < y1 ? 1 : -1
-  let err = dx - dy
 
-  while (true) {
-    pixels.push({ x: x0, y: y0 })
-    if (x0 === x1 && y0 === y1) break
-    const e2 = 2 * err
-    if (e2 > -dy) {
-      err -= dy
-      x0 += sx
-    }
-    if (e2 < dx) {
-      err += dx
-      y0 += sy
+  // 數學輔助函數
+  const fpart = (x: number): number => x - Math.floor(x)
+  // const rfpart = (x: number): number => 1 - fpart(x)
+
+  // 像素繪製函數
+  const plotPixel = (x: number, y: number, coverage: number): void => {
+    if (coverage > 0.001) { // 過濾極小的覆蓋率
+      pixels.push({
+        x: Math.floor(x),
+        y: Math.floor(y),
+        coverage: Math.min(1, coverage), // 確保覆蓋率不超過 1
+      })
     }
   }
+
+  // 判斷線條是否陡峭（斜率絕對值 > 1）
+  const steep = Math.abs(y1 - y0) > Math.abs(x1 - x0)
+
+  // 座標變換：如果線條陡峭，交換 x 和 y 座標
+  if (steep) {
+    let temp = x0
+    x0 = y0
+    y0 = temp
+    temp = x1
+    x1 = y1
+    y1 = temp
+  }
+
+  // 確保線條從左到右繪製
+  if (x0 > x1) {
+    let temp = x0
+    x0 = x1
+    x1 = temp
+    temp = y0
+    y0 = y1
+    y1 = temp
+  }
+
+  // 計算線條參數
+  const dx = x1 - x0
+  const dy = y1 - y0
+  const gradient = dx === 0 ? 1 : dy / dx
+
+  // === 處理起點 ===
+  const startPoint = processEndpoint(x0, y0, gradient, true)
+  plotEndpoint(startPoint, steep, plotPixel)
+
+  // === 處理終點 ===
+  const endPoint = processEndpoint(x1, y1, gradient, false)
+  plotEndpoint(endPoint, steep, plotPixel)
+
+  // === 主循環：繪製中間像素 ===
+  let currentY = startPoint.yend + gradient
+
+  for (let x = startPoint.xpixel + 1; x < endPoint.xpixel; x++) {
+    const yFloor = Math.floor(currentY)
+    const yFraction = fpart(currentY)
+
+    if (steep) {
+      plotPixel(yFloor, x, 1 - yFraction)
+      plotPixel(yFloor + 1, x, yFraction)
+    } else {
+      plotPixel(x, yFloor, 1 - yFraction)
+      plotPixel(x, yFloor + 1, yFraction)
+    }
+
+    currentY += gradient
+  }
+
   return pixels
+}
+
+// 數學輔助函數（在函數外部定義以便重用）
+const fpart = (x: number): number => x - Math.floor(x)
+const rfpart = (x: number): number => 1 - fpart(x)
+
+/**
+ * 處理線條端點
+ */
+function processEndpoint(x: number, y: number, gradient: number, isStart: boolean) {
+  const xend = Math.round(x)
+  const yend = y + gradient * (xend - x)
+  const xgap = isStart ? rfpart(x + 0.5) : fpart(x + 0.5)
+
+  return {
+    xpixel: xend,
+    ypixel: Math.floor(yend),
+    yend,
+    xgap,
+  }
+}
+
+/**
+ * 繪製端點像素
+ */
+function plotEndpoint(
+  endpoint: { xpixel: number, ypixel: number, yend: number, xgap: number },
+  steep: boolean,
+  plotPixel: (x: number, y: number, coverage: number) => void,
+) {
+  const { xpixel, ypixel, yend, xgap } = endpoint
+  const yFraction = fpart(yend)
+
+  if (steep) {
+    plotPixel(ypixel, xpixel, (1 - yFraction) * xgap)
+    plotPixel(ypixel + 1, xpixel, yFraction * xgap)
+  } else {
+    plotPixel(xpixel, ypixel, (1 - yFraction) * xgap)
+    plotPixel(xpixel, ypixel + 1, yFraction * xgap)
+  }
 }
 
 function parseLineColorIntensity(lineColor: string): number {
@@ -94,235 +210,249 @@ function parseLineColorIntensity(lineColor: string): number {
   return 20
 }
 
-function _generateGrayscaleImage(imageGrayData: number[][][]) {
-  const height = imageGrayData.length
-  if (height === 0) return
-  const width = imageGrayData[0].length
-  if (width === 0) return
+/**
+ * Canvas 渲染器實現
+ */
+class CanvasRenderer implements StringArtRenderer {
+  private ctx: CanvasRenderingContext2D
+  private lineColor: string
+  private lineWidth: number
+  private dpr: number
 
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
-
-  const imageData = ctx.createImageData(width, height)
-  const data = imageData.data
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const index = (y * width + x) * 4
-      // We are reversing the color from `255 - gray` back to `gray` for correct display
-      const originalGray = 255 - imageGrayData[y][x][0]
-      data[index] = originalGray // R
-      data[index + 1] = originalGray // G
-      data[index + 2] = originalGray // B
-      data[index + 3] = 255 // A
-    }
+  constructor(options: CanvasDrawOptions) {
+    this.ctx = options.ctx
+    this.lineColor = options.lineColor
+    this.lineWidth = options.lineWidth
+    this.dpr = options.dpr
   }
 
-  ctx.putImageData(imageData, 0, 0)
-  console.log('Grayscale PNG Data URL:', canvas.toDataURL('image/png'))
-}
-
-export async function drawStringArt(options: drawStringArtOptions) {
-  const { canvas, ctx, dpr, imageGrayData, points, lines, lineColor, lineWidth } = options
-
-  // generateGrayscaleImage(imageGrayData)
-
-  const width = canvas.width / dpr
-  const height = canvas.height / dpr
-  const center = { x: width / 2, y: height / 2 }
-  const radius = Math.min(width, height) / 2
-
-  // 1. Generate pins
-  const pins: Point[] = []
-  for (let i = 0; i < points; i++) {
-    const angle = (i / points) * 2 * Math.PI
-    pins.push({
-      x: Math.round(center.x + radius * Math.cos(angle)),
-      y: Math.round(center.y + radius * Math.sin(angle)),
-    })
+  setupRenderer(): void {
+    this.ctx.lineWidth = this.lineWidth
+    this.ctx.strokeStyle = this.lineColor
+    this.ctx.lineCap = 'round'
+    this.ctx.lineJoin = 'round'
   }
 
-  // Make a deep copy of the image data to avoid modifying the original
-  const mutableGrayData = imageGrayData.map(row => row.map(pixel => [...pixel]))
-  const imgHeight = mutableGrayData.length
-  const imgWidth = mutableGrayData[0].length
+  drawLine(from: Point, to: Point): void {
+    this.ctx.beginPath()
+    const x1 = Math.round(from.x)
+    const y1 = Math.round(from.y)
+    const x2 = Math.round(to.x)
+    const y2 = Math.round(to.y)
 
-  // 根據線條顏色計算扣除強度
-  const colorIntensity = parseLineColorIntensity(lineColor) * 0.09
+    this.ctx.moveTo(x1, y1)
+    this.ctx.lineTo(x2, y2)
+    this.ctx.strokeStyle = this.lineColor
+    this.ctx.lineWidth = this.lineWidth
+    this.ctx.stroke()
+  }
 
-  console.log('Color Intensity:', colorIntensity)
-
-  // 設置線條渲染屬性
-  ctx.lineWidth = lineWidth
-  ctx.strokeStyle = lineColor
-  ctx.lineCap = 'round' // 使線條端點圓滑
-  ctx.lineJoin = 'round' // 使線條連接點圓滑
-
-  let currentPinIndex = 0
-  let nextPinIndex = 0
-
-  for (let i = 0; i < lines; i++) {
-    // console.log('i: ', i)
-    let bestScore = -1
-
-    for (let j = 0; j < points; j++) {
-      if (j === currentPinIndex) continue
-
-      const linePixels = getLinePixels(pins[currentPinIndex].x, pins[currentPinIndex].y, pins[j].x, pins[j].y)
-      let currentScore = 0
-
-      for (const pixel of linePixels) {
-        // Map canvas coordinates to image data coordinates
-        const imgX = Math.floor((pixel.x / width) * imgWidth)
-        const imgY = Math.floor((pixel.y / height) * imgHeight)
-
-        if (imgX >= 0 && imgX < imgWidth && imgY >= 0 && imgY < imgHeight) currentScore += mutableGrayData[imgY][imgX][0]
-      }
-
-      if (currentScore > bestScore) {
-        bestScore = currentScore
-        nextPinIndex = j
-      }
-    }
-
-    // Draw the best line
-    ctx.beginPath()
-    // 使用 Math.round 確保座標為整數，避免半像素模糊
-    const x1 = Math.round(pins[currentPinIndex].x)
-    const y1 = Math.round(pins[currentPinIndex].y)
-    const x2 = Math.round(pins[nextPinIndex].x)
-    const y2 = Math.round(pins[nextPinIndex].y)
-
-    ctx.moveTo(x1, y1)
-    ctx.lineTo(x2, y2)
-    ctx.strokeStyle = lineColor
-    ctx.lineWidth = lineWidth
-    ctx.stroke()
-
-    // Update the grayscale data
-    const drawnLinePixels = getLinePixels(pins[currentPinIndex].x, pins[currentPinIndex].y, pins[nextPinIndex].x, pins[nextPinIndex].y)
-    for (const pixel of drawnLinePixels) {
-      const imgX = Math.floor((pixel.x / width) * imgWidth)
-      const imgY = Math.floor((pixel.y / height) * imgHeight)
-
-      if (imgX >= 0 && imgX < imgWidth && imgY >= 0 && imgY < imgHeight) {
-        // Decrease the brightness of the pixels on the line based on line color intensity
-        mutableGrayData[imgY][imgX][0] = Math.max(0, mutableGrayData[imgY][imgX][0] - colorIntensity)
-      }
-    }
-
-    currentPinIndex = nextPinIndex
-
-    if (i % 20 === 0) await sleep('frame')
-    if (i % 200 === 0) {
-      console.log('Drawing progress:', Math.round((i / lines) * 100), '%')
-    }
+  getProgress(): number {
+    return 0 // Canvas 不需要特殊的進度追蹤
   }
 }
 
-export interface drawStringSvgOptions {
-  svgElement: SVGElement
-  imageGrayData: number[][][]
-  points: number
-  lines: number
-  lineColor: string
-  lineWidth: number
-  width: number
-  height: number
-}
+/**
+ * SVG 渲染器實現
+ */
+class SvgRenderer implements StringArtRenderer {
+  private svgElement: SVGElement
+  private linesGroup: SVGGElement
+  private lineColor: string
+  private lineWidth: number
 
-export async function drawStringSvg(options: drawStringSvgOptions) {
-  const { svgElement, imageGrayData, points, lines, lineColor, lineWidth, width, height } = options
-
-  const center = { x: width / 2, y: height / 2 }
-  const radius = Math.min(width, height) / 2
-
-  // 1. Generate pins
-  const pins: Point[] = []
-  for (let i = 0; i < points; i++) {
-    const angle = (i / points) * 2 * Math.PI
-    pins.push({
-      x: Math.round(center.x + radius * Math.cos(angle)),
-      y: Math.round(center.y + radius * Math.sin(angle)),
-    })
+  constructor(options: SvgDrawOptions) {
+    this.svgElement = options.svgElement
+    this.lineColor = options.lineColor
+    this.lineWidth = options.lineWidth
+    this.linesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
   }
 
-  // Make a deep copy of the image data to avoid modifying the original
-  const mutableGrayData = imageGrayData.map(row => row.map(pixel => [...pixel]))
-  const imgHeight = mutableGrayData.length
-  const imgWidth = mutableGrayData[0].length
+  setupRenderer(): void {
+    this.linesGroup.setAttribute('stroke', this.lineColor)
+    this.linesGroup.setAttribute('stroke-width', this.lineWidth.toString())
+    this.linesGroup.setAttribute('stroke-linecap', 'round')
+    this.linesGroup.setAttribute('stroke-linejoin', 'round')
+    this.linesGroup.setAttribute('fill', 'none')
+    this.svgElement.appendChild(this.linesGroup)
+  }
 
-  // 根據線條顏色計算扣除強度
-  const colorIntensity = parseLineColorIntensity(lineColor) * 0.09
-
-  console.log('Color Intensity:', colorIntensity)
-
-  // Create SVG group for all lines
-  const linesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-  linesGroup.setAttribute('stroke', lineColor)
-  linesGroup.setAttribute('stroke-width', lineWidth.toString())
-  linesGroup.setAttribute('stroke-linecap', 'round')
-  linesGroup.setAttribute('stroke-linejoin', 'round')
-  linesGroup.setAttribute('fill', 'none')
-
-  svgElement.appendChild(linesGroup)
-
-  let currentPinIndex = 0
-  let nextPinIndex = 0
-
-  for (let i = 0; i < lines; i++) {
-    let bestScore = -1
-
-    for (let j = 0; j < points; j++) {
-      if (j === currentPinIndex) continue
-
-      const linePixels = getLinePixels(pins[currentPinIndex].x, pins[currentPinIndex].y, pins[j].x, pins[j].y)
-      let currentScore = 0
-
-      for (const pixel of linePixels) {
-        // Map SVG coordinates to image data coordinates
-        const imgX = Math.floor((pixel.x / width) * imgWidth)
-        const imgY = Math.floor((pixel.y / height) * imgHeight)
-
-        if (imgX >= 0 && imgX < imgWidth && imgY >= 0 && imgY < imgHeight) currentScore += mutableGrayData[imgY][imgX][0]
-      }
-
-      if (currentScore > bestScore) {
-        bestScore = currentScore
-        nextPinIndex = j
-      }
-    }
-
-    // Draw the best line using SVG
+  drawLine(from: Point, to: Point): void {
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line')
-    line.setAttribute('x1', pins[currentPinIndex].x.toString())
-    line.setAttribute('y1', pins[currentPinIndex].y.toString())
-    line.setAttribute('x2', pins[nextPinIndex].x.toString())
-    line.setAttribute('y2', pins[nextPinIndex].y.toString())
-    linesGroup.appendChild(line)
+    line.setAttribute('x1', from.x.toString())
+    line.setAttribute('y1', from.y.toString())
+    line.setAttribute('x2', to.x.toString())
+    line.setAttribute('y2', to.y.toString())
+    this.linesGroup.appendChild(line)
+  }
 
-    // Update the grayscale data
-    const drawnLinePixels = getLinePixels(pins[currentPinIndex].x, pins[currentPinIndex].y, pins[nextPinIndex].x, pins[nextPinIndex].y)
-    for (const pixel of drawnLinePixels) {
-      const imgX = Math.floor((pixel.x / width) * imgWidth)
-      const imgY = Math.floor((pixel.y / height) * imgHeight)
+  getProgress(): number {
+    return this.linesGroup.children.length
+  }
+}
 
-      if (imgX >= 0 && imgX < imgWidth && imgY >= 0 && imgY < imgHeight) {
-        // Decrease the brightness of the pixels on the line based on line color intensity
-        mutableGrayData[imgY][imgX][0] = Math.max(0, mutableGrayData[imgY][imgX][0] - colorIntensity)
+/**
+ * 生成釘子位置
+ */
+function generatePins(center: Point, radius: number, points: number): Point[] {
+  const pins: Point[] = []
+  for (let i = 0; i < points; i++) {
+    const angle = (i / points) * 2 * Math.PI
+    pins.push({
+      x: Math.round(center.x + radius * Math.cos(angle)),
+      y: Math.round(center.y + radius * Math.sin(angle)),
+    })
+  }
+  return pins
+}
+
+/**
+ * 計算線條分數
+ */
+function calculateLineScore(
+  from: Point,
+  to: Point,
+  grayData: number[][][],
+  width: number,
+  height: number,
+): number {
+  const linePixels = getLinePixels(from.x, from.y, to.x, to.y)
+  let score = 0
+  const imgHeight = grayData.length
+  const imgWidth = grayData[0].length
+
+  for (const pixel of linePixels) {
+    const imgX = Math.floor((pixel.x / width) * imgWidth)
+    const imgY = Math.floor((pixel.y / height) * imgHeight)
+
+    if (imgX >= 0 && imgX < imgWidth && imgY >= 0 && imgY < imgHeight) {
+      const coverage = pixel.coverage || 1
+      score += grayData[imgY][imgX][0] * coverage
+    }
+  }
+
+  return score
+}
+
+/**
+ * 更新灰階數據
+ */
+function updateGrayData(
+  from: Point,
+  to: Point,
+  grayData: number[][][],
+  width: number,
+  height: number,
+  colorIntensity: number,
+): void {
+  const linePixels = getLinePixels(from.x, from.y, to.x, to.y)
+  const imgHeight = grayData.length
+  const imgWidth = grayData[0].length
+
+  for (const pixel of linePixels) {
+    const imgX = Math.floor((pixel.x / width) * imgWidth)
+    const imgY = Math.floor((pixel.y / height) * imgHeight)
+
+    if (imgX >= 0 && imgX < imgWidth && imgY >= 0 && imgY < imgHeight) {
+      const coverage = pixel.coverage || 1
+      const adjustedIntensity = colorIntensity * coverage
+      grayData[imgY][imgX][0] = Math.max(0, grayData[imgY][imgX][0] - adjustedIntensity)
+    }
+  }
+}
+
+/**
+ * 統一的字符串藝術繪製函數
+ */
+export async function drawStringArt(options: BaseDrawOptions, renderer: StringArtRenderer): Promise<void> {
+  const { imageGrayData, points, lines, lineColor, width, height } = options
+
+  const center = { x: width / 2, y: height / 2 }
+  const radius = Math.min(width, height) / 2
+
+  // 生成釘子位置
+  const pins = generatePins(center, radius, points)
+
+  // 深拷貝圖像數據
+  const mutableGrayData = imageGrayData.map(row => row.map(pixel => [...pixel]))
+  const colorIntensity = parseLineColorIntensity(lineColor) * 0.09
+
+  console.log('Color Intensity:', colorIntensity)
+
+  // 設置渲染器
+  renderer.setupRenderer()
+
+  let currentPinIndex = 0
+
+  for (let i = 0; i < lines; i++) {
+    let bestScore = -1
+    let nextPinIndex = 0
+
+    // 尋找最佳下一個釘子
+    for (let j = 0; j < points; j++) {
+      if (j === currentPinIndex) continue
+
+      const score = calculateLineScore(
+        pins[currentPinIndex],
+        pins[j],
+        mutableGrayData,
+        width,
+        height,
+      )
+
+      if (score > bestScore) {
+        bestScore = score
+        nextPinIndex = j
       }
     }
 
+    // 繪製最佳線條
+    renderer.drawLine(pins[currentPinIndex], pins[nextPinIndex])
+
+    // 更新灰階數據
+    updateGrayData(
+      pins[currentPinIndex],
+      pins[nextPinIndex],
+      mutableGrayData,
+      width,
+      height,
+      colorIntensity,
+    )
+
     currentPinIndex = nextPinIndex
 
+    // 性能優化：定期讓出控制權
     if (i % 20 === 0) await sleep('frame')
     if (i % 200 === 0) {
       console.log('Drawing progress:', Math.round((i / lines) * 100), '%')
     }
   }
+}
+
+/**
+ * Canvas 模式的便捷函數
+ */
+export async function drawStringArtCanvas(options: CanvasDrawOptions): Promise<void> {
+  const width = options.canvas.width / options.dpr
+  const height = options.canvas.height / options.dpr
+
+  const baseOptions: BaseDrawOptions = {
+    ...options,
+    width,
+    height,
+  }
+
+  const renderer = new CanvasRenderer(options)
+  await drawStringArt(baseOptions, renderer)
+}
+
+/**
+ * SVG 模式的便捷函數
+ */
+export async function drawStringArtSvg(options: SvgDrawOptions): Promise<void> {
+  const baseOptions: BaseDrawOptions = options
+  const renderer = new SvgRenderer(options)
+  await drawStringArt(baseOptions, renderer)
 }
 
 export const defaultStringArtOptions: StringArtOptions = {
@@ -565,7 +695,7 @@ class StringArt {
     console.log('Image Gray Height:', imageGrayData.length)
 
     if (this.options.mode === 'canvas') {
-      await drawStringArt({
+      await drawStringArtCanvas({
         canvas: this.stringArtCanvas!,
         ctx: this.ctx!,
         dpr: this.dpr,
@@ -574,9 +704,11 @@ class StringArt {
         lines: this.options.lines,
         lineColor: this.options.lineColor,
         lineWidth: this.options.lineWidth,
+        width: this.el.clientWidth,
+        height: this.el.clientHeight,
       })
     } else {
-      await drawStringSvg({
+      await drawStringArtSvg({
         svgElement: this.stringArtSvg!,
         imageGrayData,
         points: this.options.points,

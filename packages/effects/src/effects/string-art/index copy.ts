@@ -1,6 +1,409 @@
 import type { CoreContext, EventInstance, StateInstance } from '@wowfy/core'
 import type { StringArtEffect, StringArtOptions } from '../../types'
-import { addStyles, createElement, parseDuration, sleep, validateCSSTime, validateRange } from '../../utils'
+import { addStyles, createElement, parseDuration, pipe, sleep, validateCSSTime, validateRange } from '../../utils'
+
+export interface drawStringArtOptions {
+  canvas: HTMLCanvasElement
+  ctx: CanvasRenderingContext2D
+  dpr: number
+  imageGrayData: number[][][]
+  points: number
+  lines: number
+  lineColor: string
+  lineWidth: number
+}
+
+export interface Point {
+  x: number
+  y: number
+  coverage?: number // 線條在像素內的覆蓋比率 (0-1)
+}
+
+/**
+ * Wu's Line Algorithm - 抗鋸齒線條算法
+ * 計算線段經過的所有像素及其覆蓋率
+ * @param x0 起點 x 座標
+ * @param y0 起點 y 座標
+ * @param x1 終點 x 座標
+ * @param y1 終點 y 座標
+ * @returns 包含像素座標和覆蓋率的點陣列
+ */
+function getLinePixels(x0: number, y0: number, x1: number, y1: number): Point[] {
+  const pixels: Point[] = []
+
+  // 數學輔助函數
+  const fpart = (x: number): number => x - Math.floor(x)
+  // const rfpart = (x: number): number => 1 - fpart(x)
+
+  // 像素繪製函數
+  const plotPixel = (x: number, y: number, coverage: number): void => {
+    if (coverage > 0.001) { // 過濾極小的覆蓋率
+      pixels.push({
+        x: Math.floor(x),
+        y: Math.floor(y),
+        coverage: Math.min(1, coverage), // 確保覆蓋率不超過 1
+      })
+    }
+  }
+
+  // 判斷線條是否陡峭（斜率絕對值 > 1）
+  const steep = Math.abs(y1 - y0) > Math.abs(x1 - x0)
+
+  // 座標變換：如果線條陡峭，交換 x 和 y 座標
+  if (steep) {
+    let temp = x0
+    x0 = y0
+    y0 = temp
+    temp = x1
+    x1 = y1
+    y1 = temp
+  }
+
+  // 確保線條從左到右繪製
+  if (x0 > x1) {
+    let temp = x0
+    x0 = x1
+    x1 = temp
+    temp = y0
+    y0 = y1
+    y1 = temp
+  }
+
+  // 計算線條參數
+  const dx = x1 - x0
+  const dy = y1 - y0
+  const gradient = dx === 0 ? 1 : dy / dx
+
+  // === 處理起點 ===
+  const startPoint = processEndpoint(x0, y0, gradient, true)
+  plotEndpoint(startPoint, steep, plotPixel)
+
+  // === 處理終點 ===
+  const endPoint = processEndpoint(x1, y1, gradient, false)
+  plotEndpoint(endPoint, steep, plotPixel)
+
+  // === 主循環：繪製中間像素 ===
+  let currentY = startPoint.yend + gradient
+
+  for (let x = startPoint.xpixel + 1; x < endPoint.xpixel; x++) {
+    const yFloor = Math.floor(currentY)
+    const yFraction = fpart(currentY)
+
+    if (steep) {
+      plotPixel(yFloor, x, 1 - yFraction)
+      plotPixel(yFloor + 1, x, yFraction)
+    } else {
+      plotPixel(x, yFloor, 1 - yFraction)
+      plotPixel(x, yFloor + 1, yFraction)
+    }
+
+    currentY += gradient
+  }
+
+  return pixels
+}
+
+// 數學輔助函數（在函數外部定義以便重用）
+const fpart = (x: number): number => x - Math.floor(x)
+const rfpart = (x: number): number => 1 - fpart(x)
+
+/**
+ * 處理線條端點
+ */
+function processEndpoint(x: number, y: number, gradient: number, isStart: boolean) {
+  const xend = Math.round(x)
+  const yend = y + gradient * (xend - x)
+  const xgap = isStart ? rfpart(x + 0.5) : fpart(x + 0.5)
+
+  return {
+    xpixel: xend,
+    ypixel: Math.floor(yend),
+    yend,
+    xgap,
+  }
+}
+
+/**
+ * 繪製端點像素
+ */
+function plotEndpoint(
+  endpoint: { xpixel: number, ypixel: number, yend: number, xgap: number },
+  steep: boolean,
+  plotPixel: (x: number, y: number, coverage: number) => void,
+) {
+  const { xpixel, ypixel, yend, xgap } = endpoint
+  const yFraction = fpart(yend)
+
+  if (steep) {
+    plotPixel(ypixel, xpixel, (1 - yFraction) * xgap)
+    plotPixel(ypixel + 1, xpixel, yFraction * xgap)
+  } else {
+    plotPixel(xpixel, ypixel, (1 - yFraction) * xgap)
+    plotPixel(xpixel, ypixel + 1, yFraction * xgap)
+  }
+}
+
+function parseLineColorIntensity(lineColor: string): number {
+  // 将颜色字符串转换为灰阶色彩值
+  const colorRegex = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i
+  const rgbaRegex = /^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/
+
+  if (colorRegex.test(lineColor)) {
+    // 处理十六进制颜色
+    const hex = lineColor.slice(1)
+    let r: number, g: number, b: number
+
+    if (hex.length === 3) {
+      // #RGB 格式
+      r = Number.parseInt(hex[0] + hex[0], 16)
+      g = Number.parseInt(hex[1] + hex[1], 16)
+      b = Number.parseInt(hex[2] + hex[2], 16)
+    } else if (hex.length === 4) {
+      // #RGBA 格式
+      r = Number.parseInt(hex[0] + hex[0], 16)
+      g = Number.parseInt(hex[1] + hex[1], 16)
+      b = Number.parseInt(hex[2] + hex[2], 16)
+    } else if (hex.length === 6) {
+      // #RRGGBB 格式
+      r = Number.parseInt(hex.slice(0, 2), 16)
+      g = Number.parseInt(hex.slice(2, 4), 16)
+      b = Number.parseInt(hex.slice(4, 6), 16)
+    } else if (hex.length === 8) {
+      // #RRGGBBAA 格式
+      r = Number.parseInt(hex.slice(0, 2), 16)
+      g = Number.parseInt(hex.slice(2, 4), 16)
+      b = Number.parseInt(hex.slice(4, 6), 16)
+    } else {
+      return 20 // 默认值
+    }
+
+    // 使用加权平均法计算灰度值
+    return 255 - Math.round(r * 0.299 + g * 0.587 + b * 0.114)
+  } else if (rgbaRegex.test(lineColor)) {
+    // 处理 rgba 格式
+    const match = lineColor.match(rgbaRegex)
+    if (match) {
+      const r = Number.parseInt(match[1], 10)
+      const g = Number.parseInt(match[2], 10)
+      const b = Number.parseInt(match[3], 10)
+      // 使用加权平均法计算灰度值
+      return 255 - Math.round(r * 0.299 + g * 0.587 + b * 0.114)
+    }
+  }
+
+  // 默认灰度值
+  return 20
+}
+
+export async function drawStringArt(options: drawStringArtOptions) {
+  const { canvas, ctx, dpr, imageGrayData, points, lines, lineColor, lineWidth } = options
+
+  const width = canvas.width / dpr
+  const height = canvas.height / dpr
+  const center = { x: width / 2, y: height / 2 }
+  const radius = Math.min(width, height) / 2
+
+  // 1. Generate pins
+  const pins: Point[] = []
+  for (let i = 0; i < points; i++) {
+    const angle = (i / points) * 2 * Math.PI
+    pins.push({
+      x: Math.round(center.x + radius * Math.cos(angle)),
+      y: Math.round(center.y + radius * Math.sin(angle)),
+    })
+  }
+
+  // Make a deep copy of the image data to avoid modifying the original
+  const mutableGrayData = imageGrayData.map(row => row.map(pixel => [...pixel]))
+  const imgHeight = mutableGrayData.length
+  const imgWidth = mutableGrayData[0].length
+
+  // 根據線條顏色計算扣除強度
+  const colorIntensity = parseLineColorIntensity(lineColor) * 0.09
+
+  console.log('Color Intensity:', colorIntensity)
+
+  // 設置線條渲染屬性
+  ctx.lineWidth = lineWidth
+  ctx.strokeStyle = lineColor
+  ctx.lineCap = 'round' // 使線條端點圓滑
+  ctx.lineJoin = 'round' // 使線條連接點圓滑
+
+  let currentPinIndex = 0
+  let nextPinIndex = 0
+
+  for (let i = 0; i < lines; i++) {
+    // console.log('i: ', i)
+    let bestScore = -1
+
+    for (let j = 0; j < points; j++) {
+      if (j === currentPinIndex) continue
+
+      const linePixels = getLinePixels(pins[currentPinIndex].x, pins[currentPinIndex].y, pins[j].x, pins[j].y)
+      let currentScore = 0
+
+      for (const pixel of linePixels) {
+        // Map canvas coordinates to image data coordinates
+        const imgX = Math.floor((pixel.x / width) * imgWidth)
+        const imgY = Math.floor((pixel.y / height) * imgHeight)
+
+        if (imgX >= 0 && imgX < imgWidth && imgY >= 0 && imgY < imgHeight) {
+          // 使用覆蓋率加權計算分數
+          const coverage = pixel.coverage || 1
+          currentScore += mutableGrayData[imgY][imgX][0] * coverage
+        }
+      }
+
+      if (currentScore > bestScore) {
+        bestScore = currentScore
+        nextPinIndex = j
+      }
+    }
+
+    // Draw the best line
+    ctx.beginPath()
+    // 使用 Math.round 確保座標為整數，避免半像素模糊
+    const x1 = Math.round(pins[currentPinIndex].x)
+    const y1 = Math.round(pins[currentPinIndex].y)
+    const x2 = Math.round(pins[nextPinIndex].x)
+    const y2 = Math.round(pins[nextPinIndex].y)
+
+    ctx.moveTo(x1, y1)
+    ctx.lineTo(x2, y2)
+    ctx.strokeStyle = lineColor
+    ctx.lineWidth = lineWidth
+    ctx.stroke()
+
+    // Update the grayscale data
+    const drawnLinePixels = getLinePixels(pins[currentPinIndex].x, pins[currentPinIndex].y, pins[nextPinIndex].x, pins[nextPinIndex].y)
+    for (const pixel of drawnLinePixels) {
+      const imgX = Math.floor((pixel.x / width) * imgWidth)
+      const imgY = Math.floor((pixel.y / height) * imgHeight)
+
+      if (imgX >= 0 && imgX < imgWidth && imgY >= 0 && imgY < imgHeight) {
+        // 根據覆蓋率調整顏色強度的影響
+        const coverage = pixel.coverage || 1
+        const adjustedIntensity = colorIntensity * coverage
+        mutableGrayData[imgY][imgX][0] = Math.max(0, mutableGrayData[imgY][imgX][0] - adjustedIntensity)
+      }
+    }
+
+    currentPinIndex = nextPinIndex
+
+    if (i % 20 === 0) await sleep('frame')
+    if (i % 200 === 0) {
+      console.log('Drawing progress:', Math.round((i / lines) * 100), '%')
+    }
+  }
+}
+
+export interface drawStringSvgOptions {
+  svgElement: SVGElement
+  imageGrayData: number[][][]
+  points: number
+  lines: number
+  lineColor: string
+  lineWidth: number
+  width: number
+  height: number
+}
+
+export async function drawStringSvg(options: drawStringSvgOptions) {
+  const { svgElement, imageGrayData, points, lines, lineColor, lineWidth, width, height } = options
+
+  const center = { x: width / 2, y: height / 2 }
+  const radius = Math.min(width, height) / 2
+
+  // 1. Generate pins
+  const pins: Point[] = []
+  for (let i = 0; i < points; i++) {
+    const angle = (i / points) * 2 * Math.PI
+    pins.push({
+      x: Math.round(center.x + radius * Math.cos(angle)),
+      y: Math.round(center.y + radius * Math.sin(angle)),
+    })
+  }
+
+  // Make a deep copy of the image data to avoid modifying the original
+  const mutableGrayData = imageGrayData.map(row => row.map(pixel => [...pixel]))
+  const imgHeight = mutableGrayData.length
+  const imgWidth = mutableGrayData[0].length
+
+  // 根據線條顏色計算扣除強度
+  const colorIntensity = parseLineColorIntensity(lineColor) * 0.09
+
+  console.log('Color Intensity:', colorIntensity)
+
+  // Create SVG group for all lines
+  const linesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+  linesGroup.setAttribute('stroke', lineColor)
+  linesGroup.setAttribute('stroke-width', lineWidth.toString())
+  linesGroup.setAttribute('stroke-linecap', 'round')
+  linesGroup.setAttribute('stroke-linejoin', 'round')
+  linesGroup.setAttribute('fill', 'none')
+
+  svgElement.appendChild(linesGroup)
+
+  let currentPinIndex = 0
+  let nextPinIndex = 0
+
+  for (let i = 0; i < lines; i++) {
+    let bestScore = -1
+
+    for (let j = 0; j < points; j++) {
+      if (j === currentPinIndex) continue
+
+      const linePixels = getLinePixels(pins[currentPinIndex].x, pins[currentPinIndex].y, pins[j].x, pins[j].y)
+      let currentScore = 0
+
+      for (const pixel of linePixels) {
+        // Map SVG coordinates to image data coordinates
+        const imgX = Math.floor((pixel.x / width) * imgWidth)
+        const imgY = Math.floor((pixel.y / height) * imgHeight)
+
+        if (imgX >= 0 && imgX < imgWidth && imgY >= 0 && imgY < imgHeight) {
+          // 使用覆蓋率加權計算分數
+          const coverage = pixel.coverage || 1
+          currentScore += mutableGrayData[imgY][imgX][0] * coverage
+        }
+      }
+
+      if (currentScore > bestScore) {
+        bestScore = currentScore
+        nextPinIndex = j
+      }
+    }
+
+    // Draw the best line using SVG
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line')
+    line.setAttribute('x1', pins[currentPinIndex].x.toString())
+    line.setAttribute('y1', pins[currentPinIndex].y.toString())
+    line.setAttribute('x2', pins[nextPinIndex].x.toString())
+    line.setAttribute('y2', pins[nextPinIndex].y.toString())
+    linesGroup.appendChild(line)
+
+    // Update the grayscale data
+    const drawnLinePixels = getLinePixels(pins[currentPinIndex].x, pins[currentPinIndex].y, pins[nextPinIndex].x, pins[nextPinIndex].y)
+    for (const pixel of drawnLinePixels) {
+      const imgX = Math.floor((pixel.x / width) * imgWidth)
+      const imgY = Math.floor((pixel.y / height) * imgHeight)
+
+      if (imgX >= 0 && imgX < imgWidth && imgY >= 0 && imgY < imgHeight) {
+        // 根據覆蓋率調整顏色強度的影響
+        const coverage = pixel.coverage || 1
+        const adjustedIntensity = colorIntensity * coverage
+        mutableGrayData[imgY][imgX][0] = Math.max(0, mutableGrayData[imgY][imgX][0] - adjustedIntensity)
+      }
+    }
+
+    currentPinIndex = nextPinIndex
+
+    if (i % 20 === 0) await sleep('frame')
+    if (i % 200 === 0) {
+      console.log('Drawing progress:', Math.round((i / lines) * 100), '%')
+    }
+  }
+}
 
 export const defaultStringArtOptions: StringArtOptions = {
   duration: '500ms',
@@ -12,6 +415,7 @@ export const defaultStringArtOptions: StringArtOptions = {
   lines: 1e4,
   lineColor: '#0001',
   lineWidth: 1,
+  mode: 'canvas',
 }
 
 function validateOptions(options: StringArtOptions) {
@@ -36,6 +440,11 @@ function validateOptions(options: StringArtOptions) {
       keys: ['size'],
       validate: v => v ? validateRange(v, { min: 1, max: 2000 }) : true,
       getMessage: k => getRangeInvalidMessage(k, 1, 2000),
+    },
+    {
+      keys: ['mode'],
+      validate: v => ['canvas', 'svg'].includes(v),
+      getMessage: (k, v) => `"${v}" is not a valid mode. Mode must be either "canvas" or "svg".`,
     },
   ]
 
@@ -68,595 +477,108 @@ function initManagers(managers: { state: StateInstance, event: EventInstance }) 
   })
 }
 
-function resolveImageRgb(image: string | File | Blob): Promise<number[][][]> {
+function loadImage(image: string | File | Blob) {
   return new Promise((resolve, reject) => {
-    const url = typeof image === 'string' ? image : URL.createObjectURL(image)
     const img = new Image()
-    img.crossOrigin = 'anonymous' // This is required to get image data from a different origin
-    img.src = url
+
+    let objectUrl: string | null = null
+
+    const cleanup = () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl)
+        objectUrl = null
+      }
+    }
 
     img.onload = () => {
-      const canvas = document.createElement('canvas')
-      canvas.width = img.width
-      canvas.height = img.height
-      const ctx = canvas.getContext('2d')
-      if (!ctx) {
-        reject(new Error('Failed to get canvas context'))
-        return
-      }
-      ctx.drawImage(img, 0, 0)
-
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-      const data = imageData.data
-      const rgbData: number[][][] = Array(canvas.height)
-
-      for (let y = 0; y < canvas.height; y++) {
-        const row: number[][] = Array(canvas.width)
-        for (let x = 0; x < canvas.width; x++) {
-          const index = (y * canvas.width + x) * 4
-          const r = data[index]
-          const g = data[index + 1]
-          const b = data[index + 2]
-          row[x] = [r, g, b]
-        }
-        rgbData[y] = row
-      }
-
-      resolve(rgbData)
+      cleanup()
+      resolve(img)
     }
 
-    img.onerror = (error) => {
-      reject(error)
+    img.onerror = () => {
+      cleanup()
+      reject(new Error('Failed to load image'))
+    }
+
+    if (typeof image === 'string') {
+      img.crossOrigin = 'anonymous'
+      img.src = image
+    } else {
+      objectUrl = URL.createObjectURL(image)
+      img.src = objectUrl
     }
   })
 }
 
-export interface drawStringArtOptions {
-  canvas: HTMLCanvasElement
-  ctx: CanvasRenderingContext2D
-  dpr: number
-  imageRgbData: number[][][]
-  points: number
-  lines: number
-  lineColor: string
-  lineWidth: number
+function resizeImage(img: HTMLImageElement, maxSize: number = 256): HTMLCanvasElement {
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+
+  const ratio = Math.max(
+    maxSize / img.width,
+    maxSize / img.height,
+  )
+  const newWidth = img.width * ratio
+  const newHeight = img.height * ratio
+
+  canvas.width = newWidth
+  canvas.height = newHeight
+
+  ctx?.drawImage(img, 0, 0, newWidth, newHeight)
+
+  return canvas
 }
 
-export interface Point {
-  x: number
-  y: number
+type ColorSpace = 'rgb' | 'rgba' | 'gray'
+
+function covertToGrayScale(rgb: number[]): number {
+  const [r, g, b] = rgb
+  // 使用加權平均法計算灰度值
+  const grayValue = Math.round(r * 0.299 + g * 0.587 + b * 0.114)
+  return 255 - grayValue
 }
 
-export function drawLine(
-  ctx: CanvasRenderingContext2D,
-  start: Point,
-  end: Point,
-  options: { color: string, width: number },
-) {
-  ctx.beginPath()
-  ctx.moveTo(start.x, start.y)
-  ctx.lineTo(end.x, end.y)
-  ctx.lineWidth = options.width
-  ctx.strokeStyle = options.color
-  ctx.stroke()
-}
+function getImageData(canvas: HTMLCanvasElement, colorSpace: ColorSpace = 'gray', size?: number): number[][][] {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Failed to get canvas context')
 
-export function drawRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  options: { color: string, width?: number, fill?: boolean },
-) {
-  ctx.beginPath()
-  ctx.rect(x, y, width, height)
-  if (options.fill) {
-    ctx.fillStyle = options.color
-    ctx.fill()
-  }
-  if (options.width) {
-    ctx.lineWidth = options.width
-    ctx.strokeStyle = options.color
-    ctx.stroke()
-  }
-}
+  let startX = 0
+  let startY = 0
+  let targetWidth = canvas.width
+  let targetHeight = canvas.height
 
-// 计算两种颜色之间的 L2 距离
-// function colorDifference(c1: number[], c2: number[]): number {
-//   return (
-//     (c1[0] - c2[0]) ** 2
-//     + (c1[1] - c2[1]) ** 2
-//     + (c1[2] - c2[2]) ** 2
-//   )
-// }
+  // 如果指定了 size，則從中間截取 size x size 的正方形區域
+  if (size) {
+    targetWidth = Math.min(size, canvas.width)
+    targetHeight = Math.min(size, canvas.height)
 
-// 计算两点之间所有像素的颜色差异总和
-// function computeLineDifference(
-//   imgData: number[][],
-//   x1: number,
-//   y1: number,
-//   x2: number,
-//   y2: number,
-//   lineColor: number[],
-// ): number {
-//   let totalDiff = 0
-//   const steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1))
-
-//   for (let i = 0; i <= steps; i++) {
-//     const t = i / steps
-//     const x = Math.round(x1 * (1 - t) + x2 * t)
-//     const y = Math.round(y1 * (1 - t) + y2 * t)
-//     if (x >= 0 && x < imgData.length && y >= 0 && y < imgData[0].length) {
-//       totalDiff += colorDifference(imgData[y][x], lineColor)
-//     }
-//   }
-//   return totalDiff
-// }
-
-// function computeLineDifference(
-//   imgData: number[][][], // 原始三維圖像資料
-//   x1: number,
-//   y1: number,
-//   x2: number,
-//   y2: number,
-//   lineColor: [number, number, number],
-// ): number {
-//   const height = imgData.length
-//   const width = imgData[0].length
-//   const flatLength = width * height * 3
-
-//   // 將 3D 圖像轉換成 1D 陣列
-//   const flatOriginal = Array(flatLength)
-//   for (let y = 0; y < height; y++) {
-//     for (let x = 0; x < width; x++) {
-//       const idx = (y * width + x) * 3
-//       const [r, g, b] = imgData[y][x]
-//       flatOriginal[idx] = r
-//       flatOriginal[idx + 1] = g
-//       flatOriginal[idx + 2] = b
-//     }
-//   }
-
-//   // 複製一份模擬線條用
-//   const flatSimulated = flatOriginal.slice()
-
-//   const steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1))
-//   for (let i = 0; i <= steps; i++) {
-//     const t = i / steps
-//     const x = Math.round(x1 * (1 - t) + x2 * t)
-//     const y = Math.round(y1 * (1 - t) + y2 * t)
-
-//     if (x < 0 || x >= width || y < 0 || y >= height) continue
-
-//     const idx = (y * width + x) * 3
-//     flatSimulated[idx] = lineColor[0]
-//     flatSimulated[idx + 1] = lineColor[1]
-//     flatSimulated[idx + 2] = lineColor[2]
-//   }
-
-//   // 差異總和計算（L1 norm）
-//   let totalDiff = 0
-//   for (let i = 0; i < flatLength; i++) {
-//     totalDiff += Math.abs(flatOriginal[i] - flatSimulated[i])
-//   }
-
-//   return totalDiff
-// }
-
-function swap<T>(a: T, b: T): [T, T] {
-  return [b, a]
-}
-
-// function computeLineDifference(
-//   imageData: number[][][],
-//   x0: number,
-//   y0: number,
-//   x1: number,
-//   y1: number,
-//   lineColor: number[],
-//   maxDiff?: number,
-// ): number {
-//   const height = imageData.length
-//   const width = imageData[0].length
-//   const [lr, lg, lb, la = 255] = lineColor
-//   let totalDiff = 0
-
-//   function fpart(x: number) {
-//     return x - (x | 0)
-//   }
-
-//   function rfpart(x: number) {
-//     return 1 - fpart(x)
-//   }
-
-//   const steep = Math.abs(y1 - y0) > Math.abs(x1 - x0)
-//   if (steep) {
-//     [x0, y0] = swap(x0, y0);
-//     [x1, y1] = swap(x1, y1)
-//   }
-
-//   if (x0 > x1) {
-//     [x0, x1] = swap(x0, x1);
-//     [y0, y1] = swap(y0, y1)
-//   }
-
-//   const dx = x1 - x0
-//   const dy = y1 - y0
-//   const gradient = dx === 0 ? 1 : dy / dx
-
-//   const safePlot = (x: number, y: number, coverage: number): boolean => {
-//     if (x >= 0 && x < width && y >= 0 && y < height) {
-//       const [r, g, b, a = 255] = imageData[y][x]
-//       const dr = r - lr
-//       const dg = g - lg
-//       const db = b - lb
-//       const da = a - la
-//       const diff = Math.sqrt(dr * dr + dg * dg + db * db + da * da)
-//       const scaled = diff * coverage
-//       totalDiff += scaled
-//       // console.log('totalDiff', totalDiff, 'scaled', scaled, 'diff', diff, 'coverage', coverage)
-//       if (maxDiff !== undefined && totalDiff >= maxDiff) return true
-//     }
-//     return false
-//   }
-
-//   // 起點
-//   let xEnd = Math.round(x0)
-//   let yEnd = y0 + gradient * (xEnd - x0)
-//   let xGap = rfpart(x0 + 0.5)
-//   const xPixel1 = xEnd
-//   const yPixel1 = Math.floor(yEnd)
-
-//   if (steep) {
-//     if (safePlot(yPixel1, xPixel1, rfpart(yEnd) * xGap)) return totalDiff
-//     if (safePlot(yPixel1 + 1, xPixel1, fpart(yEnd) * xGap)) return totalDiff
-//   } else {
-//     if (safePlot(xPixel1, yPixel1, rfpart(yEnd) * xGap)) return totalDiff
-//     if (safePlot(xPixel1, yPixel1 + 1, fpart(yEnd) * xGap)) return totalDiff
-//   }
-
-//   let intery = yEnd + gradient
-
-//   // 終點
-//   xEnd = Math.round(x1)
-//   yEnd = y1 + gradient * (xEnd - x1)
-//   xGap = fpart(x1 + 0.5)
-//   const xPixel2 = xEnd
-//   const yPixel2 = Math.floor(yEnd)
-
-//   if (steep) {
-//     if (safePlot(yPixel2, xPixel2, rfpart(yEnd) * xGap)) return totalDiff
-//     if (safePlot(yPixel2 + 1, xPixel2, fpart(yEnd) * xGap)) return totalDiff
-//   } else {
-//     if (safePlot(xPixel2, yPixel2, rfpart(yEnd) * xGap)) return totalDiff
-//     if (safePlot(xPixel2, yPixel2 + 1, fpart(yEnd) * xGap)) return totalDiff
-//   }
-
-//   // 中間線段部分
-//   if (steep) {
-//     for (let x = xPixel1 + 1; x < xPixel2; x++) {
-//       const y = Math.floor(intery)
-//       if (safePlot(y, x, rfpart(intery))) return totalDiff
-//       if (safePlot(y + 1, x, fpart(intery))) return totalDiff
-//       intery += gradient
-//     }
-//   } else {
-//     for (let x = xPixel1 + 1; x < xPixel2; x++) {
-//       const y = Math.floor(intery)
-//       if (safePlot(x, y, rfpart(intery))) return totalDiff
-//       if (safePlot(x, y + 1, fpart(intery))) return totalDiff
-//       intery += gradient
-//     }
-//   }
-
-//   return totalDiff
-// }
-
-function computeLineDifference(
-  imageData: number[][][],
-  x0: number,
-  y0: number,
-  x1: number,
-  y1: number,
-  lineColor: number[],
-  ctx: CanvasRenderingContext2D,
-  maxDiff?: number,
-): [number, { x: number, y: number, diffColor: number[], coverage: number }[]] {
-  const height = imageData.length
-  const width = imageData[0].length
-  const [lr, lg, lb, la = 255] = lineColor
-  let totalDiff = 0
-  const linePixels: { x: number, y: number, diffColor: number[], coverage: number }[] = [] // 儲存每個像素資訊
-
-  function fpart(x: number) {
-    return x - (x | 0)
+    // 計算起始位置，確保從中間截取
+    startX = Math.floor((canvas.width - targetWidth) / 2)
+    startY = Math.floor((canvas.height - targetHeight) / 2)
   }
 
-  function rfpart(x: number) {
-    return 1 - fpart(x)
-  }
+  const imageData = ctx.getImageData(startX, startY, targetWidth, targetHeight)
+  const data = imageData.data
+  const width = imageData.width
+  const height = imageData.height
 
-  const steep = Math.abs(y1 - y0) > Math.abs(x1 - x0)
-  if (steep) {
-    [x0, y0] = swap(x0, y0);
-    [x1, y1] = swap(x1, y1)
-  }
-
-  if (x0 > x1) {
-    [x0, x1] = swap(x0, x1);
-    [y0, y1] = swap(y0, y1)
-  }
-
-  const dx = x1 - x0
-  const dy = y1 - y0
-  const gradient = dx === 0 ? 1 : dy / dx
-
-  const safePlot = (x: number, y: number, coverage: number): boolean => {
-    if (x >= 0 && x < width && y >= 0 && y < height) {
-      const [r, g, b, a = 255] = imageData[y][x]
-      const dr = r - lr
-      const dg = g - lg
-      const db = b - lb
-      const da = a - la
-      const diffColor = [dr, dg, db] // 顏色差異
-
-      const diff = Math.sqrt(dr * dr + dg * dg + db * db + da * da)
-      const scaled = diff * coverage
-      totalDiff += scaled
-
-      // 儲存每個像素的資訊
-      linePixels.push({ x, y, diffColor, coverage })
-
-      if (maxDiff !== undefined && totalDiff >= maxDiff) return true
-    }
-    return false
-  }
-
-  // 起點
-  let xEnd = Math.round(x0)
-  let yEnd = y0 + gradient * (xEnd - x0)
-  let xGap = rfpart(x0 + 0.5)
-  const xPixel1 = xEnd
-  const yPixel1 = Math.floor(yEnd)
-
-  if (steep) {
-    if (safePlot(yPixel1, xPixel1, rfpart(yEnd) * xGap)) return [totalDiff, linePixels]
-    if (safePlot(yPixel1 + 1, xPixel1, fpart(yEnd) * xGap)) return [totalDiff, linePixels]
-  } else {
-    if (safePlot(xPixel1, yPixel1, rfpart(yEnd) * xGap)) return [totalDiff, linePixels]
-    if (safePlot(xPixel1, yPixel1 + 1, fpart(yEnd) * xGap)) return [totalDiff, linePixels]
-  }
-
-  let intery = yEnd + gradient
-
-  // 終點
-  xEnd = Math.round(x1)
-  yEnd = y1 + gradient * (xEnd - x1)
-  xGap = fpart(x1 + 0.5)
-  const xPixel2 = xEnd
-  const yPixel2 = Math.floor(yEnd)
-
-  if (steep) {
-    if (safePlot(yPixel2, xPixel2, rfpart(yEnd) * xGap)) return [totalDiff, linePixels]
-    if (safePlot(yPixel2 + 1, xPixel2, fpart(yEnd) * xGap)) return [totalDiff, linePixels]
-  } else {
-    if (safePlot(xPixel2, yPixel2, rfpart(yEnd) * xGap)) return [totalDiff, linePixels]
-    if (safePlot(xPixel2, yPixel2 + 1, fpart(yEnd) * xGap)) return [totalDiff, linePixels]
-  }
-
-  // 中間線段部分
-  if (steep) {
-    for (let x = xPixel1 + 1; x < xPixel2; x++) {
-      const y = Math.floor(intery)
-      if (safePlot(y, x, rfpart(intery))) return [totalDiff, linePixels]
-      if (safePlot(y + 1, x, fpart(intery))) return [totalDiff, linePixels]
-      intery += gradient
-    }
-  } else {
-    for (let x = xPixel1 + 1; x < xPixel2; x++) {
-      const y = Math.floor(intery)
-      if (safePlot(x, y, rfpart(intery))) return [totalDiff, linePixels]
-      if (safePlot(x, y + 1, fpart(intery))) return [totalDiff, linePixels]
-      intery += gradient
-    }
-  }
-
-  return [totalDiff, linePixels]
-}
-
-// 更新影像像素色彩，把畫線的色彩加上去
-// function updateImageData(
-//   imgData: number[][][],
-//   x1: number,
-//   y1: number,
-//   x2: number,
-//   y2: number,
-//   lineColor: number[],
-//   blendFactor = 0.8,
-// ) {
-//   const steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1))
-
-//   for (let i = 0; i <= steps; i++) {
-//     const t = i / steps
-//     const x = Math.round(x1 * (1 - t) + x2 * t)
-//     const y = Math.round(y1 * (1 - t) + y2 * t)
-
-//     if (x >= 0 && x < imgData.length && y >= 0 && y < imgData[0].length) {
-//       imgData[y][x] = imgData[y][x].map((c, idx) =>
-//         Math.round(c * (1 - blendFactor) + lineColor[idx] * blendFactor),
-//       )
-//     }
-//   }
-// }
-
-function updateImageData(
-  imageData: number[][][],
-  linePixels: { x: number, y: number, diffColor: number[] }[],
-) {
-  for (const { x, y, diffColor } of linePixels) {
-    if (x >= 0 && x < imageData[0].length && y >= 0 && y < imageData.length) {
-      const [r, g, b] = imageData[y][x]
-
-      // 计算最终颜色：图像颜色减去线条颜色差异并根据覆盖比例调整
-      const newR = Math.round(r - diffColor[0])
-      const newG = Math.round(g - diffColor[1])
-      const newB = Math.round(b - diffColor[2])
-
-      // 更新图像数据
-      imageData[y][x] = [newR, newG, newB]
-    }
-  }
-}
-
-// function toGrayScale(color: number[]) {
-//   const [r, g, b] = color
-//   return 0.299 * r + 0.587 * g + 0.114 * b
-// }
-
-// function imageDataToGrayScale(imageData: number[][][]) {
-//   const grayData = imageData.map(row => row.map(color => toGrayScale(color)))
-//   return grayData
-// }
-
-// **主函數**
-export async function drawStringArt(options: drawStringArtOptions) {
-  console.log('drawStringArt', options)
-
-  const { canvas, ctx, dpr, imageRgbData, points, lines, lineColor, lineWidth }
-    = options
-
-  // **1. 初始設定**
-  canvas.width = canvas.clientWidth * dpr
-  canvas.height = canvas.clientHeight * dpr
-  ctx.scale(dpr, dpr)
-  ctx.lineWidth = lineWidth
-  ctx.strokeStyle = lineColor
-
-  // 影像像素數據拷貝
-  const imgData = JSON.parse(JSON.stringify(imageRgbData))
-  // const imgData = imageDataToGrayScale(imageRgbData)
-
-  // console.log('影像像素數據拷貝')
-  // console.log('canvas.width', canvas.width)
-  // console.log('canvas.height', canvas.height)
-
-  // **2. 生成圓點**
-  const width = canvas.width / dpr
-  const height = canvas.height / dpr
-  const cx = width / 2
-  const cy = height / 2
-  const radius = Math.min(width, height) * 0.5
-  const nailPositions = Array.from({ length: points }, (_, i) => {
-    const angle = (i / points) * Math.PI * 2
-    return { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius }
-  })
-
-  nailPositions.forEach((pos) => {
-    // console.log('生成圓點', pos)
-    drawRect(ctx, pos.x, pos.y, 1, 1, {
-      color: '#000',
-      fill: true,
-    })
-  })
-
-  // console.log('生成圓點')
-
-  // **3. 畫線**
-  let currentPointIndex = Math.floor(Math.random() * points)
-  const usedPairs = new Set<string>() // 記錄已經畫過的線
-  // const lineToString = (start: Point, end: Point) => `${start.x.toFixed(2)},${start.y.toFixed(2)}-${end.x.toFixed(2)},${end.y.toFixed(2)}`
-  const lineToString = (start: number, end: number) => {
-    const key = [start, end].sort((a, b) => a - b).join('-')
-    return key
-  }
-
-  async function drawNextLine(): Promise<void> {
-    let bestNextIndex = -1
-    let bestDiff = Infinity
-    let bestDiffLinePixels: { x: number, y: number, diffColor: number[] }[] = []
-    const currentPoint = nailPositions[currentPointIndex]
-
-    // **3.1 貪婪尋找下一個點**
-    for (const [index, target] of nailPositions.entries()) {
-      if (index !== currentPointIndex) {
-        if (usedPairs.has(lineToString(currentPointIndex, index))) return
-        const [diff, updatedLineColor] = computeLineDifference(imgData, currentPoint.x, currentPoint.y, target.x, target.y, [0, 0, 0], ctx)
-
-        drawLine(ctx, currentPoint, target, {
-          color: '#000',
-          width: 1,
-        })
-        for (const { x, y, coverage } of updatedLineColor) {
-          await sleep(2000)
-          console.log('更新影像數據', x, y, `${Math.round(coverage * 100)}%`)
-          drawRect(ctx, x, y, 1, 1, {
-            color: `#f00`,
-            fill: true,
-          })
-        }
-        // console.log('貪婪尋找下一個點', target, index, diff)
-        if (diff < bestDiff) {
-          bestDiff = diff
-          bestNextIndex = index
-          bestDiffLinePixels = updatedLineColor
-        }
+  const result: number[][][] = Array.from({ length: height }, () => Array.from({ length: width }, () => []))
+  let index = 0
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (colorSpace === 'gray') {
+        const grayValue = covertToGrayScale([data[index], data[index + 1], data[index + 2]])
+        result[y][x] = [grayValue]
+      } else if (colorSpace === 'rgb') {
+        result[y][x] = [data[index], data[index + 1], data[index + 2]]
+      } else if (colorSpace === 'rgba') {
+        result[y][x] = [data[index], data[index + 1], data[index + 2], data[index + 3]]
       }
+      index += 4 // 每個像素有4個值 (R, G, B, A)
     }
-
-    // nailPositions.forEach(async (target, index) => {
-    //   // console.log('貪婪尋找下一個點', target, index)
-
-    // })
-
-    // console.log('貪婪尋找下一個點', `(${currentPointIndex}, ${bestNextIndex})`, bestDiff)
-
-    if (bestNextIndex === -1) {
-      return
-    }
-
-    const nextPoint = nailPositions[bestNextIndex]
-
-    usedPairs.add(lineToString(currentPointIndex, bestNextIndex))
-
-    // **動畫畫線**
-    await new Promise<void>((resolve) => {
-      let progress = 0
-      let preX = currentPoint.x
-      let preY = currentPoint.y
-
-      function animateLine() {
-        progress += 0.5
-        if (progress > 1) {
-          // 畫完後更新影像數據
-          // updateImageData(imgData, currentPoint.x, currentPoint.y, nextPoint.x, nextPoint.y, [0, 0, 0])
-          updateImageData(imgData, bestDiffLinePixels)
-          currentPointIndex = bestNextIndex
-          resolve()
-          return
-        }
-
-        const x = currentPoint.x * (1 - progress) + nextPoint.x * progress
-        const y = currentPoint.y * (1 - progress) + nextPoint.y * progress
-
-        drawLine(ctx, { x: preX, y: preY }, { x, y }, {
-          color: lineColor,
-          width: lineWidth,
-        })
-
-        preX = x
-        preY = y
-
-        requestAnimationFrame(animateLine)
-        // setTimeout(animateLine, 1000)
-      }
-      animateLine()
-    })
   }
 
-  for (let i = 0; i < lines; i++) {
-    await drawNextLine()
-  }
+  return result
 }
 
 class StringArt {
@@ -669,6 +591,7 @@ class StringArt {
   private options: StringArtOptions
   private stringArtWrapper?: HTMLElement
   private stringArtCanvas?: HTMLCanvasElement
+  private stringArtSvg?: SVGElement
   private stringArtInstances: HTMLElement[] = []
   private dpr: number = window.devicePixelRatio || 1
   private ctx: CanvasRenderingContext2D | null = null
@@ -685,11 +608,23 @@ class StringArt {
 
     if (!this.stringArtWrapper) {
       this.stringArtWrapper = this.createWrapper()
-      this.stringArtCanvas = this.createCanvas()
-      this.stringArtWrapper.appendChild(this.stringArtCanvas)
+
+      if (this.options.mode === 'canvas') {
+        this.stringArtCanvas = this.createCanvas()
+        this.stringArtWrapper.appendChild(this.stringArtCanvas)
+        this.ctx = this.stringArtCanvas.getContext('2d')
+
+        if (this.ctx) {
+          // 設置 Canvas 渲染優化
+          this.ctx.imageSmoothingEnabled = false // 禁用圖像平滑，避免模糊
+          this.ctx.scale(this.dpr, this.dpr)
+        }
+      } else {
+        this.stringArtSvg = this.createSvg()
+        this.stringArtWrapper.appendChild(this.stringArtSvg)
+      }
+
       this.el.appendChild(this.stringArtWrapper)
-      this.ctx = this.stringArtCanvas.getContext('2d')
-      this.ctx?.scale(this.dpr, this.dpr)
     }
   }
 
@@ -698,24 +633,49 @@ class StringArt {
   }
 
   async start() {
-    const imageRgbData = await resolveImageRgb(this.options.image)
+    const imagePipeline = pipe(
+      loadImage,
+      res => resizeImage(res, 512),
+      res => getImageData(res, 'gray', 512),
+    )
+    const imageGrayData = await imagePipeline(this.options.image)
 
-    await drawStringArt({
-      canvas: this.stringArtCanvas!,
-      ctx: this.ctx!,
-      dpr: this.dpr,
-      imageRgbData,
-      points: this.options.points,
-      lines: this.options.lines,
-      lineColor: this.options.lineColor,
-      lineWidth: this.options.lineWidth,
-    })
+    console.log('Device Pixel Ratio:', this.dpr)
+    console.log('Image Gray Width:', imageGrayData[0].length)
+    console.log('Image Gray Height:', imageGrayData.length)
+
+    if (this.options.mode === 'canvas') {
+      await drawStringArt({
+        canvas: this.stringArtCanvas!,
+        ctx: this.ctx!,
+        dpr: this.dpr,
+        imageGrayData,
+        points: this.options.points,
+        lines: this.options.lines,
+        lineColor: this.options.lineColor,
+        lineWidth: this.options.lineWidth,
+      })
+    } else {
+      await drawStringSvg({
+        svgElement: this.stringArtSvg!,
+        imageGrayData,
+        points: this.options.points,
+        lines: this.options.lines,
+        lineColor: this.options.lineColor,
+        lineWidth: this.options.lineWidth,
+        width: this.el.clientWidth,
+        height: this.el.clientHeight,
+      })
+    }
   }
 
   destroy() {
     this.stringArtInstances.forEach(r => r.remove())
     this.stringArtInstances = []
     this.stringArtWrapper?.remove()
+    this.stringArtCanvas = undefined
+    this.stringArtSvg = undefined
+    this.ctx = null
   }
 
   private createWrapper() {
@@ -745,6 +705,22 @@ class StringArt {
     canvas.height = height
 
     return canvas
+  }
+
+  private createSvg() {
+    const width = this.el.clientWidth
+    const height = this.el.clientHeight
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    svg.setAttribute('width', '100%')
+    svg.setAttribute('height', '100%')
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`)
+    svg.style.position = 'absolute'
+    svg.style.borderRadius = 'inherit'
+    svg.style.pointerEvents = 'none'
+    svg.style.contain = 'strict'
+
+    return svg
   }
 }
 

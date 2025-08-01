@@ -7,7 +7,14 @@ import { createStringArt } from "wowfy";
 // import img from "@/assets/einstein.jpeg";
 // import img from "@/assets/kiro.webp";
 // import img from "@/assets/nike.webp";
-import img from "@/assets/puma.png";
+// import img from "@/assets/puma.png";
+// import img from "@/assets/hali.jpg";
+// import img from "@/assets/lufy.jpeg";
+// import img from "@/assets/x.png";
+// import img from "@/assets/vue.png";
+// import img from "@/assets/react2.png";
+// import img from "@/assets/forever.png";
+import img from "@/assets/104.jpg"; // Change this to your desired image
 
 let stringArt: StringArtEffect;
 
@@ -16,13 +23,9 @@ onMounted(async () => {
 
   stringArt = createStringArt(".js-stringArt", {
     duration: "0.5s",
-    // image: "https://fakeimg.pl/500x500",
-    // image: "https://picsum.photos/200/300",
     image: img,
-    points: 500,
+    points: 288,
     lines: 6000,
-    // lines: 10,
-    // lineColor: "#00000005",
     lineColor: `#000000${"15"}`,
     mode: "svg",
   });
@@ -38,7 +41,6 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <!-- <img src="https://fakeimg.pl/500x500" alt="" /> -->
   <div class="wrapper">
     <div class="box js-stringArt"></div>
   </div>
@@ -59,7 +61,6 @@ onBeforeUnmount(() => {
   width: 660px;
   aspect-ratio: 1;
   border: 1px solid #000a;
-  /* border-radius: 50%; */
   box-sizing: content-box;
 }
 </style>
