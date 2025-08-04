@@ -67,7 +67,13 @@ export interface RippleOptions {
 
 export type RippleEffect = CoreEffect<RippleOptions>
 
-export type StringArtMode = 'canvas' | 'svg'
+export type LineAlgorithm = 'xiaolin-wu' | 'bresenham'
+
+export type BackgroundSize = 'contain' | 'cover' | 'auto' | string
+
+export type BackgroundPosition = 'center' | 'top' | 'bottom' | 'left' | 'right' | 'top left' | 'top right' | 'bottom left' | 'bottom right' | string
+
+export type PinShape = 'circle' | 'square' | 'diamond' | 'polygon' | string
 
 export interface StringArtOptions {
   duration: string
@@ -78,7 +84,10 @@ export interface StringArtOptions {
   lines: number
   lineColor: string
   lineWidth: number
-  mode: StringArtMode
+  lineAlgorithm: LineAlgorithm
+  backgroundSize: BackgroundSize
+  backgroundPosition: BackgroundPosition
+  pinShape: PinShape
 }
 
 export interface StringArtEffect extends CoreEffect<StringArtOptions> {
