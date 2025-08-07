@@ -767,8 +767,6 @@ function calculateLineScore(
   from: Point,
   to: Point,
   grayData: number[][][],
-  width: number,
-  height: number,
   algorithm: LineAlgorithm,
 ): number {
   const linePixels = getLinePixels(algorithm, from.x, from.y, to.x, to.y)
@@ -797,8 +795,6 @@ function updateGrayData(
   from: Point,
   to: Point,
   grayData: number[][][],
-  width: number,
-  height: number,
   colorIntensity: number,
   algorithm: LineAlgorithm,
 ): void {
@@ -859,8 +855,6 @@ export async function drawStringArt(options: BaseDrawOptions, renderer: StringAr
         pins[currentPinIndex],
         pins[j],
         mutableGrayData,
-        width,
-        height,
         lineAlgorithm,
       )
 
@@ -878,8 +872,6 @@ export async function drawStringArt(options: BaseDrawOptions, renderer: StringAr
       pins[currentPinIndex],
       pins[nextPinIndex],
       mutableGrayData,
-      width,
-      height,
       colorIntensity,
       lineAlgorithm,
     )
@@ -1174,7 +1166,7 @@ function getImageData(
   )
 
   // 清除目標 canvas（設為黑色背景，對應灰度值 255）
-  targetCtx.fillStyle = '#000000'
+  targetCtx.fillStyle = '#ffffff'
   targetCtx.fillRect(0, 0, containerWidth, containerHeight)
 
   // 將原始圖片按照 backgroundSize 繪製到目標 canvas
